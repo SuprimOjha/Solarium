@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.20)
 
 project(
     Solarium
-    VERSION 0.1.0
-    DESCRIPTION "High-performance C++ celestial mechanics and Solar System simulation engine"
-    LANGUAGES CXX
+    VERSION 0.2.0
+    DESCRIPTION "C++ celestial mechanics and OpenGL Solar System simulation engine"
+    LANGUAGES C CXX
 )
 
 set(CMAKE_CXX_STANDARD 20)
@@ -12,7 +12,33 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ----------------------------------------
-# Library
+# OpenGL
+# ----------------------------------------
+
+find_package(OpenGL REQUIRED)
+
+# ----------------------------------------
+# GLFW
+# ----------------------------------------
+
+find_package(glfw3 3.5 REQUIRED)
+
+# ----------------------------------------
+# GLAD
+# ----------------------------------------
+
+add_library(glad
+    external/glad/src/gl.c
+)
+
+target_include_directories(
+    glad
+    PUBLIC
+        ${PROJECT_SOURCE_DIR}/external/glad/include
+)
+
+# ----------------------------------------
+# Solarium Core
 # ----------------------------------------
 
 add_library(solarium_core
@@ -32,10 +58,36 @@ target_include_directories(
 )
 
 # ----------------------------------------
-# Compiler warnings
+# Rendering
 # ----------------------------------------
 
-if (MSVC)
+add_library(solarium_rendering
+
+    src/rendering/shader.cpp
+    src/rendering/camera.cpp
+    src/rendering/renderer.cpp
+)
+
+target_include_directories(
+    solarium_rendering
+    PUBLIC
+        ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(
+    solarium_rendering
+    PUBLIC
+        solarium_core
+        glad
+        glfw
+        OpenGL::GL
+)
+
+# ----------------------------------------
+# Warnings
+# ----------------------------------------
+
+if(MSVC)
 
     target_compile_options(
         solarium_core
@@ -70,7 +122,7 @@ add_executable(
 target_link_libraries(
     solarium
     PRIVATE
-        solarium_core
+        solarium_rendering
 )
 
 # ----------------------------------------
@@ -109,4 +161,20 @@ target_link_libraries(
 add_test(
     NAME VerletTests
     COMMAND verlet_tests
+)
+
+# ----------------------------------------
+# Assets
+# ----------------------------------------
+
+add_custom_command(
+    TARGET solarium
+    POST_BUILD
+
+    COMMAND
+        ${CMAKE_COMMAND}
+        -E copy_directory
+
+        ${PROJECT_SOURCE_DIR}/assets
+        $<TARGET_FILE_DIR:solarium>/assets
 )

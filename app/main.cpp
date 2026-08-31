@@ -1,114 +1,293 @@
 #include "solarium/celestial/celestial_body.hpp"
 #include "solarium/physics/gravity.hpp"
 #include "solarium/physics/verlet.hpp"
+#include "solarium/rendering/camera.hpp"
+#include "solarium/rendering/renderer.hpp"
 
-#include <cmath>
-#include <iomanip>
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
+
 #include <iostream>
+#include <stdexcept>
 
 namespace {
 
-constexpr double SolarMass = 1.98847e30;
-constexpr double SolarRadius = 6.9634e8;
+constexpr int WindowWidth = 1280;
+constexpr int WindowHeight = 720;
 
-constexpr double EarthMass = 5.9722e24;
-constexpr double EarthRadius = 6.371e6;
+constexpr double AstronomicalUnit =
+    1.495978707e11;
 
-constexpr double AstronomicalUnit = 1.495978707e11;
-
-constexpr double EarthOrbitalVelocity =
-    29'780.0;
-
-constexpr double Days =
+constexpr double Day =
     86'400.0;
+
+double previousMouseX = 0.0;
+double previousMouseY = 0.0;
+
+bool firstMouse = true;
+
+solarium::rendering::Camera* camera = nullptr;
+
+void mouseCallback(
+    GLFWwindow*,
+    double x,
+    double y
+) {
+
+    if (firstMouse) {
+
+        previousMouseX = x;
+        previousMouseY = y;
+
+        firstMouse = false;
+    }
+
+    const double xOffset =
+        x - previousMouseX;
+
+    const double yOffset =
+        previousMouseY - y;
+
+    previousMouseX = x;
+    previousMouseY = y;
+
+    if (camera != nullptr) {
+        camera->processMouse(
+            xOffset,
+            yOffset
+        );
+    }
+}
+
+void scrollCallback(
+    GLFWwindow*,
+    double,
+    double yOffset
+) {
+
+    if (camera != nullptr) {
+        camera->processScroll(yOffset);
+    }
+}
 
 }
 
 int main() {
 
-    using solarium::celestial::CelestialBody;
-    using solarium::math::Vec3;
-    using solarium::physics::VelocityVerlet;
-    using solarium::physics::gravitationalAcceleration;
+    using namespace solarium;
 
-    CelestialBody sun(
-        "Sun",
-        SolarMass,
-        SolarRadius,
-        Vec3{0.0, 0.0, 0.0},
-        Vec3{0.0, 0.0, 0.0}
-    );
+    if (!glfwInit()) {
 
-    CelestialBody earth(
-        "Earth",
-        EarthMass,
-        EarthRadius,
-        Vec3{AstronomicalUnit, 0.0, 0.0},
-        Vec3{0.0, EarthOrbitalVelocity, 0.0}
-    );
+        std::cerr
+            << "Failed to initialize GLFW.\n";
 
-    // Initial acceleration.
-    const Vec3 initialAcceleration =
-        gravitationalAcceleration(sun, earth);
-
-    earth.setAcceleration(initialAcceleration);
-
-    // One hour timestep.
-    constexpr double dt = 3'600.0;
-
-    // Simulate one year.
-    constexpr int steps =
-        static_cast<int>(365.25 * Days / dt);
-
-    std::cout << std::fixed
-              << std::setprecision(3);
-
-    std::cout << "=====================================\n";
-    std::cout << "          SOLARIUM V1\n";
-    std::cout << "     Celestial Mechanics Engine\n";
-    std::cout << "=====================================\n\n";
-
-    std::cout << "Simulating Earth orbit...\n\n";
-
-    for (int step = 0; step < steps; ++step) {
-
-        const Vec3 acceleration =
-            gravitationalAcceleration(sun, earth);
-
-        VelocityVerlet::integrate(
-            earth,
-            acceleration,
-            dt
-        );
-
-        // Print approximately every 30 days.
-        if (step % (24 * 30) == 0) {
-
-            const double distance =
-                earth.position().magnitude();
-
-            const double daysElapsed =
-                step * dt / Days;
-
-            std::cout
-                << "Day: "
-                << std::setw(6)
-                << daysElapsed
-                << " | Distance from Sun: "
-                << distance / AstronomicalUnit
-                << " AU\n";
-        }
+        return 1;
     }
 
-    std::cout << "\nSimulation complete.\n";
+    glfwWindowHint(
+        GLFW_CONTEXT_VERSION_MAJOR,
+        3
+    );
 
-    const double finalDistance =
-        earth.position().magnitude();
+    glfwWindowHint(
+        GLFW_CONTEXT_VERSION_MINOR,
+        3
+    );
+
+    glfwWindowHint(
+        GLFW_OPENGL_PROFILE,
+        GLFW_OPENGL_CORE_PROFILE
+    );
+
+    GLFWwindow* window =
+        glfwCreateWindow(
+            WindowWidth,
+            WindowHeight,
+            "Solarium V0.2",
+            nullptr,
+            nullptr
+        );
+
+    if (window == nullptr) {
+
+        std::cerr
+            << "Failed to create GLFW window.\n";
+
+        glfwTerminate();
+
+        return 1;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    glfwSwapInterval(1);
+
+    const int version =
+        gladLoadGL(
+            glfwGetProcAddress
+        );
+
+    if (version == 0) {
+
+        std::cerr
+            << "Failed to initialize GLAD.\n";
+
+        glfwDestroyWindow(window);
+        glfwTerminate();
+
+        return 1;
+    }
 
     std::cout
-        << "Final Earth distance: "
-        << finalDistance / AstronomicalUnit
-        << " AU\n";
+        << "OpenGL "
+        << GLAD_VERSION_MAJOR(version)
+        << "."
+        << GLAD_VERSION_MINOR(version)
+        << "\n";
+
+    rendering::Camera cameraObject;
+
+    camera = &cameraObject;
+
+    glfwSetCursorPosCallback(
+        window,
+        mouseCallback
+    );
+
+    glfwSetScrollCallback(
+        window,
+        scrollCallback
+    );
+
+    rendering::Renderer renderer(
+        WindowWidth,
+        WindowHeight
+    );
+
+    celestial::CelestialBody sun(
+        "Sun",
+        1.98847e30,
+        6.9634e8,
+        math::Vec3{},
+        math::Vec3{}
+    );
+
+    celestial::CelestialBody earth(
+        "Earth",
+        5.9722e24,
+        6.371e6,
+        math::Vec3{
+            AstronomicalUnit,
+            0.0,
+            0.0
+        },
+        math::Vec3{
+            0.0,
+            29'780.0,
+            0.0
+        }
+    );
+
+    earth.setAcceleration(
+        physics::gravitationalAcceleration(
+            sun,
+            earth
+        )
+    );
+
+    // One simulation day per rendered frame.
+    constexpr double simulationStep =
+        Day;
+
+    double simulationDays = 0.0;
+
+    double lastTime =
+        glfwGetTime();
+
+    while (
+        !glfwWindowShouldClose(window)
+    ) {
+
+        const double currentTime =
+            glfwGetTime();
+
+        const double deltaTime =
+            currentTime - lastTime;
+
+        lastTime = currentTime;
+
+        // -------------------------------
+        // Input
+        // -------------------------------
+
+        if (
+            glfwGetKey(
+                window,
+                GLFW_KEY_ESCAPE
+            ) == GLFW_PRESS
+        ) {
+
+            glfwSetWindowShouldClose(
+                window,
+                GLFW_TRUE
+            );
+        }
+
+        // -------------------------------
+        // Physics
+        // -------------------------------
+
+        const math::Vec3 acceleration =
+            physics::gravitationalAcceleration(
+                sun,
+                earth
+            );
+
+        physics::VelocityVerlet::integrate(
+            earth,
+            acceleration,
+            simulationStep
+        );
+
+        simulationDays += 1.0;
+
+        // -------------------------------
+        // Camera
+        // -------------------------------
+
+        cameraObject.update(
+            deltaTime
+        );
+
+        // -------------------------------
+        // Rendering
+        // -------------------------------
+
+        renderer.beginFrame();
+
+        renderer.renderBody(
+            sun,
+            cameraObject
+        );
+
+        renderer.renderBody(
+            earth,
+            cameraObject
+        );
+
+        renderer.endFrame();
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
+
+    std::cout
+        << "Simulated "
+        << simulationDays
+        << " days.\n";
 
     return 0;
 }

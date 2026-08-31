@@ -44,10 +44,12 @@ target_include_directories(
 add_library(solarium_core
 
     src/math/vec3.cpp
-
+    src/simulation/simulation_clock.cpp
+    src/simulation/simulation.cpp
     src/physics/gravity.cpp
     src/physics/verlet.cpp
-
+    src/rendering/orbit_trail.cpp
+    src/rendering/trail_renderer.cpp
     src/celestial/celestial_body.cpp
 )
 
@@ -55,6 +57,7 @@ target_include_directories(
     solarium_core
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/external/glad/include
 )
 
 # ----------------------------------------

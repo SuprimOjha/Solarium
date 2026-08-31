@@ -1,45 +1,56 @@
-#include "solarium/celestial/celestial_body.hpp"
-#include "solarium/physics/gravity.hpp"
-#include "solarium/physics/verlet.hpp"
 #include "solarium/rendering/camera.hpp"
+#include "solarium/rendering/orbit_trail.hpp"
 #include "solarium/rendering/renderer.hpp"
+#include "solarium/rendering/trail_renderer.hpp"
+#include "solarium/simulation/simulation.hpp"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+#include <iomanip>
 #include <iostream>
-#include <stdexcept>
+#include <sstream>
+#include <string>
 
 namespace {
 
 constexpr int WindowWidth = 1280;
 constexpr int WindowHeight = 720;
 
-constexpr double AstronomicalUnit =
-    1.495978707e11;
+solarium::rendering::Camera* gCamera = nullptr;
 
-constexpr double Day =
-    86'400.0;
+// ------------------------------------------------------------
+// Mouse state
+// ------------------------------------------------------------
 
 double previousMouseX = 0.0;
 double previousMouseY = 0.0;
 
 bool firstMouse = true;
 
-solarium::rendering::Camera* camera = nullptr;
+// ------------------------------------------------------------
+// Keyboard edge detection
+// ------------------------------------------------------------
+
+bool spaceWasPressed = false;
+bool rWasPressed = false;
+bool plusWasPressed = false;
+bool minusWasPressed = false;
+
+// ------------------------------------------------------------
+// GLFW callbacks
+// ------------------------------------------------------------
 
 void mouseCallback(
     GLFWwindow*,
     double x,
     double y
 ) {
-
     if (firstMouse) {
-
         previousMouseX = x;
         previousMouseY = y;
-
         firstMouse = false;
+        return;
     }
 
     const double xOffset =
@@ -51,8 +62,8 @@ void mouseCallback(
     previousMouseX = x;
     previousMouseY = y;
 
-    if (camera != nullptr) {
-        camera->processMouse(
+    if (gCamera != nullptr) {
+        gCamera->processMouse(
             xOffset,
             yOffset
         );
@@ -64,22 +75,81 @@ void scrollCallback(
     double,
     double yOffset
 ) {
-
-    if (camera != nullptr) {
-        camera->processScroll(yOffset);
+    if (gCamera != nullptr) {
+        gCamera->processScroll(yOffset);
     }
 }
 
+// ------------------------------------------------------------
+// Keyboard helper
+// ------------------------------------------------------------
+
+bool keyPressed(
+    GLFWwindow* window,
+    int key
+) {
+    return glfwGetKey(
+        window,
+        key
+    ) == GLFW_PRESS;
 }
+
+// ------------------------------------------------------------
+// Format simulation time
+// ------------------------------------------------------------
+
+std::string formatSimulationTime(
+    double seconds
+) {
+    const double days =
+        seconds / 86'400.0;
+
+    std::ostringstream stream;
+
+    stream
+        << std::fixed
+        << std::setprecision(2)
+        << days
+        << " days";
+
+    return stream.str();
+}
+
+// ------------------------------------------------------------
+// Format simulation speed
+// ------------------------------------------------------------
+
+std::string formatTimeScale(
+    double scale
+) {
+    const double daysPerSecond =
+        scale / 86'400.0;
+
+    std::ostringstream stream;
+
+    stream
+        << std::fixed
+        << std::setprecision(2)
+        << daysPerSecond
+        << " days/sec";
+
+    return stream.str();
+}
+
+} // namespace
 
 int main() {
 
     using namespace solarium;
 
+    // =========================================================
+    // GLFW INITIALIZATION
+    // =========================================================
+
     if (!glfwInit()) {
 
         std::cerr
-            << "Failed to initialize GLFW.\n";
+            << "ERROR: Failed to initialize GLFW.\n";
 
         return 1;
     }
@@ -99,11 +169,18 @@ int main() {
         GLFW_OPENGL_CORE_PROFILE
     );
 
+#ifdef __APPLE__
+    glfwWindowHint(
+        GLFW_OPENGL_FORWARD_COMPAT,
+        GLFW_TRUE
+    );
+#endif
+
     GLFWwindow* window =
         glfwCreateWindow(
             WindowWidth,
             WindowHeight,
-            "Solarium V0.2",
+            "Solarium V0.3",
             nullptr,
             nullptr
         );
@@ -111,7 +188,7 @@ int main() {
     if (window == nullptr) {
 
         std::cerr
-            << "Failed to create GLFW window.\n";
+            << "ERROR: Failed to create GLFW window.\n";
 
         glfwTerminate();
 
@@ -120,17 +197,22 @@ int main() {
 
     glfwMakeContextCurrent(window);
 
+    // Enable VSync.
     glfwSwapInterval(1);
 
-    const int version =
+    // =========================================================
+    // GLAD INITIALIZATION
+    // =========================================================
+
+    const int openGLVersion =
         gladLoadGL(
             glfwGetProcAddress
         );
 
-    if (version == 0) {
+    if (openGLVersion == 0) {
 
         std::cerr
-            << "Failed to initialize GLAD.\n";
+            << "ERROR: Failed to initialize GLAD.\n";
 
         glfwDestroyWindow(window);
         glfwTerminate();
@@ -140,14 +222,29 @@ int main() {
 
     std::cout
         << "OpenGL "
-        << GLAD_VERSION_MAJOR(version)
+        << GLAD_VERSION_MAJOR(openGLVersion)
         << "."
-        << GLAD_VERSION_MINOR(version)
+        << GLAD_VERSION_MINOR(openGLVersion)
         << "\n";
 
-    rendering::Camera cameraObject;
+    std::cout
+        << "Renderer: "
+        << reinterpret_cast<
+               const char*
+           >(
+               glGetString(
+                   GL_RENDERER
+               )
+           )
+        << "\n";
 
-    camera = &cameraObject;
+    // =========================================================
+    // CAMERA
+    // =========================================================
+
+    rendering::Camera camera;
+
+    gCamera = &camera;
 
     glfwSetCursorPosCallback(
         window,
@@ -159,72 +256,110 @@ int main() {
         scrollCallback
     );
 
+    // =========================================================
+    // SIMULATION
+    // =========================================================
+
+    simulation::Simulation simulation;
+
+    // =========================================================
+    // RENDERER
+    // =========================================================
+
     rendering::Renderer renderer(
         WindowWidth,
         WindowHeight
     );
 
-    celestial::CelestialBody sun(
-        "Sun",
-        1.98847e30,
-        6.9634e8,
-        math::Vec3{},
-        math::Vec3{}
+    rendering::TrailRenderer trailRenderer;
+
+    // =========================================================
+    // ORBIT TRAILS
+    // =========================================================
+
+    rendering::OrbitTrail earthTrail(
+        2'000
     );
 
-    celestial::CelestialBody earth(
-        "Earth",
-        5.9722e24,
-        6.371e6,
-        math::Vec3{
-            AstronomicalUnit,
-            0.0,
-            0.0
-        },
-        math::Vec3{
-            0.0,
-            29'780.0,
-            0.0
-        }
-    );
+    // =========================================================
+    // FRAME TIMING
+    // =========================================================
 
-    earth.setAcceleration(
-        physics::gravitationalAcceleration(
-            sun,
-            earth
-        )
-    );
-
-    // One simulation day per rendered frame.
-    constexpr double simulationStep =
-        Day;
-
-    double simulationDays = 0.0;
-
-    double lastTime =
+    double lastFrameTime =
         glfwGetTime();
+
+    double fpsTimer =
+        lastFrameTime;
+
+    int frameCount = 0;
+
+    double currentFPS = 0.0;
+
+    // =========================================================
+    // MAIN LOOP
+    // =========================================================
 
     while (
         !glfwWindowShouldClose(window)
     ) {
 
+        // -----------------------------------------------------
+        // Time
+        // -----------------------------------------------------
+
         const double currentTime =
             glfwGetTime();
 
-        const double deltaTime =
-            currentTime - lastTime;
+        double deltaTime =
+            currentTime -
+            lastFrameTime;
 
-        lastTime = currentTime;
+        lastFrameTime =
+            currentTime;
 
-        // -------------------------------
-        // Input
-        // -------------------------------
+        // Prevent an enormous simulation jump if the program
+        // is paused by the operating system/debugger.
+        if (deltaTime > 0.1) {
+            deltaTime = 0.1;
+        }
+
+        // -----------------------------------------------------
+        // FPS
+        // -----------------------------------------------------
+
+        ++frameCount;
 
         if (
-            glfwGetKey(
+            currentTime -
+            fpsTimer >= 1.0
+        ) {
+
+            currentFPS =
+                static_cast<double>(
+                    frameCount
+                ) /
+                (
+                    currentTime -
+                    fpsTimer
+                );
+
+            frameCount = 0;
+            fpsTimer = currentTime;
+        }
+
+        // =====================================================
+        // INPUT
+        // =====================================================
+
+        // -----------------------------------------------------
+        // Escape
+        // -----------------------------------------------------
+
+        if (
+            keyPressed(
                 window,
                 GLFW_KEY_ESCAPE
-            ) == GLFW_PRESS
+            )
         ) {
 
             glfwSetWindowShouldClose(
@@ -233,61 +368,206 @@ int main() {
             );
         }
 
-        // -------------------------------
-        // Physics
-        // -------------------------------
+        // -----------------------------------------------------
+        // Space - Pause / Resume
+        // -----------------------------------------------------
 
-        const math::Vec3 acceleration =
-            physics::gravitationalAcceleration(
-                sun,
-                earth
+        const bool spacePressed =
+            keyPressed(
+                window,
+                GLFW_KEY_SPACE
             );
 
-        physics::VelocityVerlet::integrate(
-            earth,
-            acceleration,
-            simulationStep
-        );
+        if (
+            spacePressed &&
+            !spaceWasPressed
+        ) {
 
-        simulationDays += 1.0;
+            simulation.togglePause();
+        }
 
-        // -------------------------------
-        // Camera
-        // -------------------------------
+        spaceWasPressed =
+            spacePressed;
 
-        cameraObject.update(
+        // -----------------------------------------------------
+        // R - Reset
+        // -----------------------------------------------------
+
+        const bool rPressed =
+            keyPressed(
+                window,
+                GLFW_KEY_R
+            );
+
+        if (
+            rPressed &&
+            !rWasPressed
+        ) {
+
+            simulation.reset();
+            earthTrail.clear();
+        }
+
+        rWasPressed =
+            rPressed;
+
+        // -----------------------------------------------------
+        // + / = - Increase speed
+        // -----------------------------------------------------
+
+        const bool plusPressed =
+            keyPressed(
+                window,
+                GLFW_KEY_EQUAL
+            ) ||
+            keyPressed(
+                window,
+                GLFW_KEY_KP_ADD
+            );
+
+        if (
+            plusPressed &&
+            !plusWasPressed
+        ) {
+
+            simulation.increaseSpeed();
+        }
+
+        plusWasPressed =
+            plusPressed;
+
+        // -----------------------------------------------------
+        // - - Decrease speed
+        // -----------------------------------------------------
+
+        const bool minusPressed =
+            keyPressed(
+                window,
+                GLFW_KEY_MINUS
+            ) ||
+            keyPressed(
+                window,
+                GLFW_KEY_KP_SUBTRACT
+            );
+
+        if (
+            minusPressed &&
+            !minusWasPressed
+        ) {
+
+            simulation.decreaseSpeed();
+        }
+
+        minusWasPressed =
+            minusPressed;
+
+        // =====================================================
+        // SIMULATION
+        // =====================================================
+
+        simulation.update(
             deltaTime
         );
 
-        // -------------------------------
-        // Rendering
-        // -------------------------------
+        // =====================================================
+        // ORBIT TRAIL
+        // =====================================================
+
+        const auto& bodies =
+            simulation.bodies();
+
+        if (bodies.size() > 1) {
+
+            earthTrail.addPoint(
+                bodies[1].position()
+            );
+
+            earthTrail.upload();
+        }
+
+        // =====================================================
+        // CAMERA
+        // =====================================================
+
+        camera.update(
+            deltaTime
+        );
+
+        // =====================================================
+        // RENDER
+        // =====================================================
 
         renderer.beginFrame();
 
-        renderer.renderBody(
-            sun,
-            cameraObject
+        // Draw Earth's orbit first.
+        trailRenderer.render(
+            earthTrail,
+            camera
         );
 
-        renderer.renderBody(
-            earth,
-            cameraObject
-        );
+        // Draw celestial bodies.
+        for (
+            const auto& body :
+            bodies
+        ) {
+
+            renderer.renderBody(
+                body,
+                camera
+            );
+        }
 
         renderer.endFrame();
 
+        // =====================================================
+        // WINDOW
+        // =====================================================
+
         glfwSwapBuffers(window);
+
         glfwPollEvents();
+
+        // =====================================================
+        // WINDOW TITLE / SIMULATION STATUS
+        // =====================================================
+
+        std::ostringstream title;
+
+        title
+            << "Solarium V0.3 | "
+            << (
+                simulation.paused()
+                    ? "PAUSED"
+                    : "RUNNING"
+            )
+            << " | Time: "
+            << formatSimulationTime(
+                simulation.simulationTime()
+            )
+            << " | Speed: "
+            << formatTimeScale(
+                simulation.timeScale()
+            )
+            << " | FPS: "
+            << std::fixed
+            << std::setprecision(1)
+            << currentFPS;
+
+        glfwSetWindowTitle(
+            window,
+            title.str().c_str()
+        );
     }
 
-    glfwDestroyWindow(window);
-    glfwTerminate();
+    // =========================================================
+    // CLEANUP
+    // =========================================================
 
-    std::cout
-        << "Simulated "
-        << simulationDays
-        << " days.\n";
+    gCamera = nullptr;
+
+    glfwDestroyWindow(window);
+
+    glfwTerminate();
 
     return 0;
 }

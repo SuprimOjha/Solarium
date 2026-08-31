@@ -14,6 +14,14 @@ public:
             celestial::CelestialBody
         >& bodies
     ) const;
+
+private:
+
+    [[nodiscard]]
+    static math::Vec3 accelerationFromBody(
+        const celestial::CelestialBody& source,
+        const celestial::CelestialBody& target
+    );
 };
 
-}
+} // namespace solarium::physics

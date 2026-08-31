@@ -6,10 +6,11 @@ namespace solarium::physics {
 
 class VelocityVerlet {
 public:
+
     static void integrate(
         celestial::CelestialBody& body,
-        const math::Vec3& newAcceleration,
-        double dt
+        const math::Vec3& acceleration,
+        double deltaTime
     );
 };
 

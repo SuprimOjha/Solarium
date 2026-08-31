@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(
     Solarium
-    VERSION 0.2.0
+    VERSION 0.4.0
     DESCRIPTION "C++ celestial mechanics and OpenGL Solar System simulation engine"
     LANGUAGES C CXX
 )
@@ -43,51 +43,31 @@ target_include_directories(
 
 add_library(solarium_core
 
+    # Math
     src/math/vec3.cpp
-    src/simulation/simulation_clock.cpp
-    src/simulation/simulation.cpp
+
+    # Celestial
+    src/celestial/celestial_body.cpp
+    src/celestial/body_registry.cpp
+
+    # Physics
     src/physics/gravity.cpp
     src/physics/verlet.cpp
-    src/rendering/orbit_trail.cpp
-    src/rendering/trail_renderer.cpp
-    src/celestial/celestial_body.cpp
+    src/physics/n_body_solver.cpp
+
+    # Simulation
+    src/simulation/simulation_clock.cpp
+    src/simulation/simulation.cpp
 )
 
 target_include_directories(
     solarium_core
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
-        ${PROJECT_SOURCE_DIR}/external/glad/include
 )
 
 # ----------------------------------------
-# Rendering
-# ----------------------------------------
-
-add_library(solarium_rendering
-
-    src/rendering/shader.cpp
-    src/rendering/camera.cpp
-    src/rendering/renderer.cpp
-)
-
-target_include_directories(
-    solarium_rendering
-    PUBLIC
-        ${PROJECT_SOURCE_DIR}/include
-)
-
-target_link_libraries(
-    solarium_rendering
-    PUBLIC
-        solarium_core
-        glad
-        glfw
-        OpenGL::GL
-)
-
-# ----------------------------------------
-# Warnings
+# Core Warnings
 # ----------------------------------------
 
 if(MSVC)
@@ -114,6 +94,36 @@ else()
 endif()
 
 # ----------------------------------------
+# Rendering
+# ----------------------------------------
+
+add_library(solarium_rendering
+
+    src/rendering/shader.cpp
+    src/rendering/camera.cpp
+    src/rendering/renderer.cpp
+
+    src/rendering/orbit_trail.cpp
+    src/rendering/trail_renderer.cpp
+)
+
+target_include_directories(
+    solarium_rendering
+    PUBLIC
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/external/glad/include
+)
+
+target_link_libraries(
+    solarium_rendering
+    PUBLIC
+        solarium_core
+        glad
+        glfw
+        OpenGL::GL
+)
+
+# ----------------------------------------
 # Application
 # ----------------------------------------
 
@@ -129,10 +139,14 @@ target_link_libraries(
 )
 
 # ----------------------------------------
-# Tests
+# Testing
 # ----------------------------------------
 
 enable_testing()
+
+# ----------------------------------------
+# Gravity Tests
+# ----------------------------------------
 
 add_executable(
     gravity_tests
@@ -150,6 +164,10 @@ add_test(
     COMMAND gravity_tests
 )
 
+# ----------------------------------------
+# Verlet Tests
+# ----------------------------------------
+
 add_executable(
     verlet_tests
     tests/physics/verlet_tests.cpp
@@ -164,6 +182,46 @@ target_link_libraries(
 add_test(
     NAME VerletTests
     COMMAND verlet_tests
+)
+
+# ----------------------------------------
+# N-Body Tests
+# ----------------------------------------
+
+add_executable(
+    n_body_tests
+    tests/physics/n_body_tests.cpp
+)
+
+target_link_libraries(
+    n_body_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME NBodyTests
+    COMMAND n_body_tests
+)
+
+# ----------------------------------------
+# Simulation Tests
+# ----------------------------------------
+
+add_executable(
+    simulation_tests
+    tests/simulation/simulation_tests.cpp
+)
+
+target_link_libraries(
+    simulation_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME SimulationTests
+    COMMAND simulation_tests
 )
 
 # ----------------------------------------

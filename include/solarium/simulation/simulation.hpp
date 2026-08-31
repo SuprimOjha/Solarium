@@ -1,18 +1,26 @@
 #pragma once
 
-#include "solarium/celestial/celestial_body.hpp"
+#include "solarium/celestial/body_registry.hpp"
+#include "solarium/physics/n_body_solver.hpp"
 #include "solarium/simulation/simulation_clock.hpp"
+#include "solarium/simulation/simulation_config.hpp"
 
 #include <vector>
-#include <cstddef>
 
 namespace solarium::simulation {
 
 class Simulation {
 public:
+
     Simulation();
 
-    void update(double realDeltaTime);
+    explicit Simulation(
+        const SimulationConfig& config
+    );
+
+    void update(
+        double realDeltaTime
+    );
 
     void pause();
     void resume();
@@ -38,15 +46,22 @@ public:
     bool paused() const noexcept;
 
 private:
+
+    SimulationConfig config_;
+
     SimulationClock clock_;
 
-    std::vector<
-        celestial::CelestialBody
-    > bodies_;
+    celestial::BodyRegistry registry_;
+
+    physics::NBodySolver solver_;
+
+    double accumulator_;
 
     void initialize();
-    void calculateAccelerations();
-    void integrate(double deltaTime);
+
+    void physicsStep(
+        double deltaTime
+    );
 };
 
-}
+} // namespace solarium::simulation

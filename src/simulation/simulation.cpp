@@ -1,143 +1,113 @@
 #include "solarium/simulation/simulation.hpp"
 
-#include "solarium/physics/gravity.hpp"
 #include "solarium/physics/verlet.hpp"
+
+#include <algorithm>
 
 namespace solarium::simulation {
 
-namespace {
-
-constexpr double AstronomicalUnit =
-    1.495978707e11;
-
-constexpr double SunMass =
-    1.98847e30;
-
-constexpr double SunRadius =
-    6.9634e8;
-
-constexpr double EarthMass =
-    5.9722e24;
-
-constexpr double EarthRadius =
-    6.371e6;
-
-constexpr double EarthOrbitalVelocity =
-    29'780.0;
-
+Simulation::Simulation()
+    : Simulation(SimulationConfig{}) {
 }
 
-Simulation::Simulation()
-    : clock_(),
-      bodies_() {
+Simulation::Simulation(
+    const SimulationConfig& config
+)
+    : config_(config),
+      clock_(),
+      registry_(),
+      solver_(),
+      accumulator_(0.0) {
 
     initialize();
 }
 
 void Simulation::initialize() {
 
-    bodies_.clear();
+    registry_.initializeSolarSystem();
 
-    celestial::CelestialBody sun(
-        "Sun",
-        SunMass,
-        SunRadius,
-        math::Vec3{
-            0.0,
-            0.0,
-            0.0
-        },
-        math::Vec3{
-            0.0,
-            0.0,
-            0.0
-        }
+    accumulator_ = 0.0;
+
+    clock_.reset();
+
+    solver_.computeAccelerations(
+        registry_.bodies()
     );
-
-    celestial::CelestialBody earth(
-        "Earth",
-        EarthMass,
-        EarthRadius,
-        math::Vec3{
-            AstronomicalUnit,
-            0.0,
-            0.0
-        },
-        math::Vec3{
-            0.0,
-            EarthOrbitalVelocity,
-            0.0
-        }
-    );
-
-    earth.setAcceleration(
-        physics::gravitationalAcceleration(
-            sun,
-            earth
-        )
-    );
-
-    bodies_.push_back(sun);
-    bodies_.push_back(earth);
 }
 
 void Simulation::update(
     double realDeltaTime
 ) {
-    clock_.update(realDeltaTime);
 
     if (clock_.paused()) {
         return;
     }
 
-    const double deltaTime =
-        clock_.deltaTime();
+    const double clampedDelta =
+        std::min(
+            realDeltaTime,
+            0.1
+        );
 
-    if (deltaTime <= 0.0) {
-        return;
-    }
+    const double scaledDelta =
+        clampedDelta *
+        clock_.timeScale();
 
-    calculateAccelerations();
+    accumulator_ += scaledDelta;
 
-    integrate(deltaTime);
-}
+    int substeps = 0;
 
-void Simulation::calculateAccelerations() {
-
-    if (bodies_.size() < 2) {
-        return;
-    }
-
-    for (
-        std::size_t i = 1;
-        i < bodies_.size();
-        ++i
+    while (
+        accumulator_ >=
+            config_.physicsStep &&
+        substeps <
+            config_.maxSubsteps
     ) {
 
-        const math::Vec3 acceleration =
-            physics::gravitationalAcceleration(
-                bodies_[0],
-                bodies_[i]
-            );
-
-        bodies_[i].setAcceleration(
-            acceleration
+        physicsStep(
+            config_.physicsStep
         );
+
+        accumulator_ -=
+            config_.physicsStep;
+
+        ++substeps;
     }
+
+    clock_.update(
+        clampedDelta
+    );
 }
 
-void Simulation::integrate(
+void Simulation::physicsStep(
     double deltaTime
 ) {
 
-    if (bodies_.size() < 2) {
+    auto& bodies =
+        registry_.bodies();
+
+    if (bodies.empty()) {
         return;
     }
 
-    physics::VelocityVerlet::integrate(
-        bodies_[1],
-        bodies_[1].acceleration(),
-        deltaTime
+    solver_.computeAccelerations(
+        bodies
+    );
+
+    for (
+        auto& body :
+        bodies
+    ) {
+
+        physics::VelocityVerlet::integrate(
+            body,
+            body.acceleration(),
+            deltaTime
+        );
+    }
+
+    solver_.computeAccelerations(
+        bodies
     );
 }
 
@@ -162,35 +132,29 @@ void Simulation::decreaseSpeed() {
 }
 
 void Simulation::reset() {
-
-    clock_.reset();
     initialize();
 }
 
 const std::vector<
     celestial::CelestialBody
->& Simulation::bodies()
-    const noexcept {
-
-    return bodies_;
+>&
+Simulation::bodies() const noexcept {
+    return registry_.bodies();
 }
 
 double Simulation::simulationTime()
     const noexcept {
-
     return clock_.simulationTime();
 }
 
 double Simulation::timeScale()
     const noexcept {
-
     return clock_.timeScale();
 }
 
 bool Simulation::paused()
     const noexcept {
-
     return clock_.paused();
 }
 
-}
+} // namespace solarium::simulation

@@ -4,25 +4,53 @@ namespace solarium::physics {
 
 void VelocityVerlet::integrate(
     celestial::CelestialBody& body,
-    const math::Vec3& newAcceleration,
-    double dt
+    const math::Vec3& acceleration,
+    double deltaTime
 ) {
-    const math::Vec3 oldAcceleration =
-        body.acceleration();
+
+    const math::Vec3 oldPosition =
+        body.position();
+
+    const math::Vec3 oldVelocity =
+        body.velocity();
+
+    /*
+     * x(t + dt)
+     *
+     * x = x + v*dt + 1/2*a*dt²
+     */
 
     const math::Vec3 newPosition =
-        body.position() +
-        body.velocity() * dt +
-        oldAcceleration * (0.5 * dt * dt);
+        oldPosition +
+        oldVelocity * deltaTime +
+        acceleration *
+            (
+                0.5 *
+                deltaTime *
+                deltaTime
+            );
+
+    /*
+     * This is the first half of the
+     * Velocity-Verlet velocity update.
+     *
+     * The N-body solver recalculates
+     * acceleration after the position
+     * update.
+     */
 
     const math::Vec3 newVelocity =
-        body.velocity() +
-        (oldAcceleration + newAcceleration) *
-        (0.5 * dt);
+        oldVelocity +
+        acceleration *
+            deltaTime;
 
-    body.setPosition(newPosition);
-    body.setVelocity(newVelocity);
-    body.setAcceleration(newAcceleration);
+    body.setPosition(
+        newPosition
+    );
+
+    body.setVelocity(
+        newVelocity
+    );
 }
 
 } // namespace solarium::physics

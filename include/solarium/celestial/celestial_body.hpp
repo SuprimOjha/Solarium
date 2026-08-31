@@ -8,12 +8,13 @@ namespace solarium::celestial {
 
 class CelestialBody {
 public:
+
     CelestialBody(
         std::string name,
         double mass,
         double radius,
-        math::Vec3 position,
-        math::Vec3 velocity
+        const math::Vec3& position,
+        const math::Vec3& velocity
     );
 
     [[nodiscard]]
@@ -34,13 +35,20 @@ public:
     [[nodiscard]]
     const math::Vec3& acceleration() const noexcept;
 
-    void setPosition(const math::Vec3& position) noexcept;
+    void setPosition(
+        const math::Vec3& position
+    ) noexcept;
 
-    void setVelocity(const math::Vec3& velocity) noexcept;
+    void setVelocity(
+        const math::Vec3& velocity
+    ) noexcept;
 
-    void setAcceleration(const math::Vec3& acceleration) noexcept;
+    void setAcceleration(
+        const math::Vec3& acceleration
+    ) noexcept;
 
 private:
+
     std::string name_;
 
     double mass_;

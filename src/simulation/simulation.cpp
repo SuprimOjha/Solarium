@@ -81,34 +81,28 @@ void Simulation::update(
 
 void Simulation::physicsStep(
     double deltaTime
-) {
+){
+    auto& bodies = registry_.bodies();
 
-    auto& bodies =
-        registry_.bodies();
-
-    if (bodies.empty()) {
+    if(bodies.empty()){
         return;
     }
 
-    solver_.computeAccelerations(
-        bodies
-    );
-
-    for (
-        auto& body :
-        bodies
-    ) {
-
-        physics::VelocityVerlet::integrate(
+    for (auto& body : bodies){
+        physics::velocityVerlet::updatePosition(
             body,
-            body.acceleration(),
             deltaTime
         );
     }
 
-    solver_.computeAccelerations(
+    solver_.computerAccelerations(
         bodies
     );
+
+    for(auto& body : bodies) {
+        const math::Vec3 newAcceleration = body.acceleration();
+
+    }
 }
 
 void Simulation::pause() {

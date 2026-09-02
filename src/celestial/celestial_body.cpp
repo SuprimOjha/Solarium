@@ -16,8 +16,9 @@ CelestialBody::CelestialBody(
       radius_(radius),
       position_(position),
       velocity_(velocity),
-      acceleration_{}
-      previousAcceleration_{} {
+      acceleration_{},
+      previousAcceleration_{}
+{
 }
 
 const std::string&

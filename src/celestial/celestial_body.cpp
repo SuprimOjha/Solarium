@@ -16,7 +16,8 @@ CelestialBody::CelestialBody(
       radius_(radius),
       position_(position),
       velocity_(velocity),
-      acceleration_{} {
+      acceleration_{}
+      previousAcceleration_{} {
 }
 
 const std::string&
@@ -52,7 +53,20 @@ void CelestialBody::setPosition(
 ) noexcept {
     position_ = position;
 }
+void CelestialBody::setPreviousAcceleration(
+    const math::Vec3& acceleration
+) noexcept {
 
+    previousAcceleration_ =
+        acceleration;
+}
+
+const math::Vec3&
+CelestialBody::previousAcceleration()
+    const noexcept {
+
+    return previousAcceleration_;
+}
 void CelestialBody::setVelocity(
     const math::Vec3& velocity
 ) noexcept {

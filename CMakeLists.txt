@@ -49,12 +49,12 @@ add_library(solarium_core
     # Celestial
     src/celestial/celestial_body.cpp
     src/celestial/body_registry.cpp
-
+    
     # Physics
     src/physics/gravity.cpp
     src/physics/verlet.cpp
     src/physics/n_body_solver.cpp
-
+    src/physics/physics_diagnostics.cpp
     # Simulation
     src/simulation/simulation_clock.cpp
     src/simulation/simulation.cpp
@@ -238,4 +238,19 @@ add_custom_command(
 
         ${PROJECT_SOURCE_DIR}/assets
         $<TARGET_FILE_DIR:solarium>/assets
+)
+add_executable(
+    diagnostics_tests
+    tests/physics/diagnostics_tests.cpp
+)
+
+target_link_libraries(
+    diagnostics_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME DiagnosticsTests
+    COMMAND diagnostics_tests
 )

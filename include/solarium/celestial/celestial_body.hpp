@@ -34,10 +34,17 @@ public:
 
     [[nodiscard]]
     const math::Vec3& acceleration() const noexcept;
+    
+[[nodiscard]]
+const math::Vec3& previousAcceleration()
+    const noexcept;
 
     void setPosition(
         const math::Vec3& position
     ) noexcept;
+    void setPreviousAcceleration(
+    const math::Vec3& acceleration
+) noexcept;
 
     void setVelocity(
         const math::Vec3& velocity
@@ -57,6 +64,7 @@ private:
     math::Vec3 position_;
     math::Vec3 velocity_;
     math::Vec3 acceleration_;
+    math::Vec3 previousAcceleration_;
 };
 
 } // namespace solarium::celestial

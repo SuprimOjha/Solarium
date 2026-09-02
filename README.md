@@ -12,7 +12,7 @@ The project began as a headless two-body orbital simulation and is evolving towa
 
 ### Current Capabilities
 
-* C++20
+* C++20.
 * CMake
 * 3D vector mathematics
 * Physical constants

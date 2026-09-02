@@ -33,6 +33,13 @@ void Simulation::initialize() {
     solver_.computeAccelerations(
         registry_.bodies()
     );
+
+    // Store the initial accelerations.
+    for (auto& body : registry_.bodies()) {
+        body.setPreviousAcceleration(
+            body.acceleration()
+        );
+    }
 }
 
 void Simulation::update(
@@ -81,27 +88,59 @@ void Simulation::update(
 
 void Simulation::physicsStep(
     double deltaTime
-){
+) {
     auto& bodies = registry_.bodies();
 
-    if(bodies.empty()){
+    if (bodies.empty()) {
         return;
     }
 
-    for (auto& body : bodies){
-        physics::velocityVerlet::updatePosition(
+    // --------------------------------------------------
+    // 1. Save the old acceleration
+    // --------------------------------------------------
+
+    for (auto& body : bodies) {
+        body.setPreviousAcceleration(
+            body.acceleration()
+        );
+    }
+
+    // --------------------------------------------------
+    // 2. Update positions
+    // r(t+dt) = r(t) + v(t)dt + 1/2 a(t)dt²
+    // --------------------------------------------------
+
+    for (auto& body : bodies) {
+        physics::VelocityVerlet::updatePosition(
             body,
             deltaTime
         );
     }
 
-    solver_.computerAccelerations(
+    // --------------------------------------------------
+    // 3. Calculate new accelerations
+    // --------------------------------------------------
+
+    solver_.computeAccelerations(
         bodies
     );
 
-    for(auto& body : bodies) {
-        const math::Vec3 newAcceleration = body.acceleration();
+    // --------------------------------------------------
+    // 4. Update velocities
+    // v(t+dt) = v(t)
+    //          + 1/2 [a(t) + a(t+dt)]dt
+    // --------------------------------------------------
 
+    for (auto& body : bodies) {
+
+        const math::Vec3 newAcceleration =
+            body.acceleration();
+
+        physics::VelocityVerlet::updateVelocity(
+            body,
+            newAcceleration,
+            deltaTime
+        );
     }
 }
 
@@ -136,18 +175,18 @@ Simulation::bodies() const noexcept {
     return registry_.bodies();
 }
 
-double Simulation::simulationTime()
-    const noexcept {
+double
+Simulation::simulationTime() const noexcept {
     return clock_.simulationTime();
 }
 
-double Simulation::timeScale()
-    const noexcept {
+double
+Simulation::timeScale() const noexcept {
     return clock_.timeScale();
 }
 
-bool Simulation::paused()
-    const noexcept {
+bool
+Simulation::paused() const noexcept {
     return clock_.paused();
 }
 

@@ -3,57 +3,73 @@
 
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 int main() {
 
-    using solarium::celestial::CelestialBody;
-    using solarium::math::Vec3;
-    using solarium::physics::VelocityVerlet;
+    using namespace solarium;
 
-    CelestialBody body(
-        "TestBody",
+    celestial::CelestialBody body(
+        "Test",
         1.0,
         1.0,
-        Vec3{0.0, 0.0, 0.0},
-        Vec3{10.0, 0.0, 0.0}
+        math::Vec3(0.0, 0.0, 0.0),
+        math::Vec3(1.0, 0.0, 0.0)
     );
 
+    // Initial acceleration.
     body.setAcceleration(
-        Vec3{2.0, 0.0, 0.0}
+        math::Vec3(0.0, 0.0, 0.0)
     );
 
-    constexpr double dt = 1.0;
+    body.setPreviousAcceleration(
+        body.acceleration()
+    );
 
-    // Constant acceleration = 2 m/s².
-    //
-    // x = x0 + v0*t + 0.5*a*t²
-    //
-    // x = 0 + 10 + 1 = 11
+    constexpr double deltaTime = 1.0;
 
-    const Vec3 newAcceleration{
-        2.0,
+    // Velocity-Verlet position update.
+    physics::VelocityVerlet::updatePosition(
+        body,
+        deltaTime
+    );
+
+    // With v = 1 and a = 0:
+    // x = x0 + v*dt = 1
+    assert(
+        std::abs(body.position().x - 1.0) < 1e-12
+    );
+
+    // New acceleration.
+    const math::Vec3 newAcceleration(
         0.0,
+        1.0,
         0.0
-    };
+    );
 
-    VelocityVerlet::integrate(
+    physics::VelocityVerlet::updateVelocity(
         body,
         newAcceleration,
-        dt
+        deltaTime
+    );
+
+    // v_new = v_old + 0.5*(a_old + a_new)*dt
+    //
+    // x velocity:
+    // 1 + 0.5*(0 + 0)*1 = 1
+    //
+    // y velocity:
+    // 0 + 0.5*(0 + 1)*1 = 0.5
+
+    assert(
+        std::abs(body.velocity().x - 1.0) < 1e-12
     );
 
     assert(
-        std::abs(body.position().x - 11.0)
-        < 1e-10
+        std::abs(body.velocity().y - 0.5) < 1e-12
     );
 
-    // v = v0 + a*t
-    // v = 10 + 2 = 12
-
-    assert(
-        std::abs(body.velocity().x - 12.0)
-        < 1e-10
-    );
+    std::cout << "VerletTests passed.\n";
 
     return 0;
 }

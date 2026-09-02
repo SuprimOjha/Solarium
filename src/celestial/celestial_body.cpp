@@ -26,11 +26,13 @@ CelestialBody::name() const noexcept {
     return name_;
 }
 
-double CelestialBody::mass() const noexcept {
+double
+CelestialBody::mass() const noexcept {
     return mass_;
 }
 
-double CelestialBody::radius() const noexcept {
+double
+CelestialBody::radius() const noexcept {
     return radius_;
 }
 
@@ -49,35 +51,37 @@ CelestialBody::acceleration() const noexcept {
     return acceleration_;
 }
 
-void CelestialBody::setPosition(
+const math::Vec3&
+CelestialBody::previousAcceleration() const noexcept {
+    return previousAcceleration_;
+}
+
+void
+CelestialBody::setPosition(
     const math::Vec3& position
 ) noexcept {
     position_ = position;
 }
-void CelestialBody::setPreviousAcceleration(
-    const math::Vec3& acceleration
-) noexcept {
 
-    previousAcceleration_ =
-        acceleration;
-}
-
-const math::Vec3&
-CelestialBody::previousAcceleration()
-    const noexcept {
-
-    return previousAcceleration_;
-}
-void CelestialBody::setVelocity(
+void
+CelestialBody::setVelocity(
     const math::Vec3& velocity
 ) noexcept {
     velocity_ = velocity;
 }
 
-void CelestialBody::setAcceleration(
+void
+CelestialBody::setAcceleration(
     const math::Vec3& acceleration
 ) noexcept {
     acceleration_ = acceleration;
 }
 
-} // namespace solarium::celestial
+void
+CelestialBody::setPreviousAcceleration(
+    const math::Vec3& acceleration
+) noexcept {
+    previousAcceleration_ = acceleration;
+}
+
+} // namespace solarium

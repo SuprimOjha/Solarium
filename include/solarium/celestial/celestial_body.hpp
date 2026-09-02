@@ -64,7 +64,7 @@ private:
     math::Vec3 position_;
     math::Vec3 velocity_;
     math::Vec3 acceleration_;
-    math::Vec3 previousAcceleration_;
+math::Vec3 previousAcceleration_;
 };
 
 } // namespace solarium::celestial

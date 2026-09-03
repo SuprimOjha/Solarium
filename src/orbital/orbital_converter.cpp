@@ -1,5 +1,5 @@
 #include "solarium/orbital/orbital_converter.hpp"
-
+#include <numbers>
 #include <cmath>
 #include <stdexcept>
 
@@ -116,7 +116,7 @@ OrbitalElements OrbitalConverter::fromState(
 
         if (longitudeAscendingNode < 0.0) {
             longitudeAscendingNode +=
-                2.0 * M_PI;
+                2.0 * std::numbers::pi;
         }
     }
 
@@ -139,7 +139,7 @@ OrbitalElements OrbitalConverter::fromState(
 
         if (eccentricityVector.z < 0.0) {
             argumentOfPeriapsis =
-                2.0 * M_PI -
+                2.0 * std::numbers::pi -
                 argumentOfPeriapsis;
         }
     }
@@ -160,7 +160,7 @@ OrbitalElements OrbitalConverter::fromState(
 
         if (position.dot(velocity) < 0.0) {
             trueAnomaly =
-                2.0 * M_PI -
+                2.0 * std::numbers::pi -
                 trueAnomaly;
         }
     }
@@ -188,7 +188,7 @@ OrbitalElements OrbitalConverter::fromState(
 
         if (eccentricAnomaly < 0.0) {
             eccentricAnomaly +=
-                2.0 * M_PI;
+                2.0 * std::numbers::pi;
         }
 
         /*
@@ -204,7 +204,7 @@ OrbitalElements OrbitalConverter::fromState(
 
         if (meanAnomaly < 0.0) {
             meanAnomaly +=
-                2.0 * M_PI;
+                2.0 * std::numbers::pi;
         }
     }
 
@@ -219,7 +219,7 @@ OrbitalElements OrbitalConverter::fromState(
     if (semiMajorAxis > 0.0) {
 
         period =
-            2.0 * M_PI *
+            2.0 * std::numbers::pi *
             std::sqrt(
                 (semiMajorAxis *
                  semiMajorAxis *

@@ -58,6 +58,9 @@ add_library(solarium_core
     # Simulation
     src/simulation/simulation_clock.cpp
     src/simulation/simulation.cpp
+    # orbital 
+    src/orbital/orbital_converter.cpp
+src/orbital/kepler_solver.cpp
 )
 
 target_include_directories(
@@ -253,4 +256,19 @@ target_link_libraries(
 add_test(
     NAME DiagnosticsTests
     COMMAND diagnostics_tests
+)
+add_executable(
+    orbital_elements_tests
+    tests/orbital/orbital_elements_tests.cpp
+)
+
+target_link_libraries(
+    orbital_elements_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME OrbitalElementsTests
+    COMMAND orbital_elements_tests
 )

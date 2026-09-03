@@ -57,6 +57,7 @@ add_library(solarium_core
     src/physics/physics_diagnostics.cpp
     src/physics/rk4.cpp
     src/physics/rk45.cpp
+    src/physics/timestep_controller.cpp
     # Simulation
     src/simulation/simulation_clock.cpp
     src/simulation/simulation.cpp
@@ -303,4 +304,19 @@ target_link_libraries(
 add_test(
     NAME RK4Tests
     COMMAND rk4_tests
+)
+add_executable(
+    timestep_controller_tests
+    tests/physics/timestep_controller_tests.cpp
+)
+
+target_link_libraries(
+    timestep_controller_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME TimestepControllerTests
+    COMMAND timestep_controller_tests
 )

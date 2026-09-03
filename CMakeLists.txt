@@ -58,6 +58,7 @@ add_library(solarium_core
     src/physics/rk4.cpp
     src/physics/rk45.cpp
     src/physics/timestep_controller.cpp
+    src/physics/adaptive_integrator.cpp
     # Simulation
     src/simulation/simulation_clock.cpp
     src/simulation/simulation.cpp
@@ -319,4 +320,19 @@ target_link_libraries(
 add_test(
     NAME TimestepControllerTests
     COMMAND timestep_controller_tests
+)
+add_executable(
+    adaptive_integrator_tests
+    tests/physics/adaptive_integrator_tests.cpp
+)
+
+target_link_libraries(
+    adaptive_integrator_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME AdaptiveIntegratorTests
+    COMMAND adaptive_integrator_tests
 )

@@ -536,7 +536,7 @@ int main() {
         title
             << "Solarium V0.5 | "
             << (
-                simulation.paused().
+                simulation.paused()
                     ? "PAUSED"
                     : "RUNNING"
             )

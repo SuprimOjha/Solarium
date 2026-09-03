@@ -55,6 +55,7 @@ add_library(solarium_core
     src/physics/verlet.cpp
     src/physics/n_body_solver.cpp
     src/physics/physics_diagnostics.cpp
+    src/physics/rk4.cpp
     # Simulation
     src/simulation/simulation_clock.cpp
     src/simulation/simulation.cpp

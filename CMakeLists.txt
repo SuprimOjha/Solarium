@@ -56,6 +56,7 @@ add_library(solarium_core
     src/physics/n_body_solver.cpp
     src/physics/physics_diagnostics.cpp
     src/physics/rk4.cpp
+    src/physics/rk45.cpp
     # Simulation
     src/simulation/simulation_clock.cpp
     src/simulation/simulation.cpp
@@ -272,4 +273,34 @@ target_link_libraries(
 add_test(
     NAME OrbitalElementsTests
     COMMAND orbital_elements_tests
+)
+add_executable(
+    rk45_tests
+    tests/physics/rk45_tests.cpp
+)
+
+target_link_libraries(
+    rk45_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME RK45Tests
+    COMMAND rk45_tests
+)
+add_executable(
+    rk4_tests
+    tests/physics/rk4_tests.cpp
+)
+
+target_link_libraries(
+    rk4_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME RK4Tests
+    COMMAND rk4_tests
 )

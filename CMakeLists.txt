@@ -332,3 +332,7 @@ target_link_libraries(
         solarium_core
 )
 
+add_test(
+    NAME AdaptiveIntegratorTests
+    COMMAND adaptive_integrator_tests
+)

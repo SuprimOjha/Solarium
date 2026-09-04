@@ -65,6 +65,11 @@ add_library(solarium_core
     # orbital 
     src/orbital/orbital_converter.cpp
 src/orbital/kepler_solver.cpp
+# reference
+src/time/astronomical_time.cpp
+src/time/time_conversion.cpp
+src/reference/frame_transform.cpp
+src/reference/state_transform.cpp
 )
 
 target_include_directories(
@@ -335,4 +340,33 @@ target_link_libraries(
 add_test(
     NAME AdaptiveIntegratorTests
     COMMAND adaptive_integrator_tests
+)
+
+add_executable(time_conversion_tests
+    tests/time/time_conversion_tests.cpp
+)
+
+target_link_libraries(
+    time_conversion_tests
+    PRIVATE solarium_core
+)
+
+add_test(
+    NAME TimeConversionTests
+    COMMAND time_conversion_tests
+)
+
+
+add_executable(state_transform_tests
+    tests/reference/state_transform_tests.cpp
+)
+
+target_link_libraries(
+    state_transform_tests
+    PRIVATE solarium_core
+)
+
+add_test(
+    NAME StateTransformTests
+    COMMAND state_transform_tests
 )

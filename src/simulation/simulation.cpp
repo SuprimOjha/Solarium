@@ -1,14 +1,14 @@
 #include "solarium/simulation/simulation.hpp"
 
-#include "solarium/physics/verlet.hpp"
-
 #include <algorithm>
+#include <memory>
 
 namespace solarium::simulation {
 
 Simulation::Simulation()
     : Simulation(SimulationConfig{}) {
 }
+
 
 Simulation::Simulation(
     const SimulationConfig& config
@@ -17,10 +17,15 @@ Simulation::Simulation(
       clock_(),
       registry_(),
       solver_(),
-      accumulator_(0.0) {
+      integrator_(nullptr),
+      accumulator_(0.0),
+      currentPhysicsStep_(
+          config.physicsStep
+      ) {
 
     initialize();
 }
+
 
 void Simulation::initialize() {
 
@@ -28,19 +33,70 @@ void Simulation::initialize() {
 
     accumulator_ = 0.0;
 
+    currentPhysicsStep_ =
+        config_.physicsStep;
+
     clock_.reset();
 
     solver_.computeAccelerations(
         registry_.bodies()
     );
 
-    // Store the initial accelerations.
-    for (auto& body : registry_.bodies()) {
+    // Store initial accelerations.
+    for (auto& body :
+         registry_.bodies()) {
+
         body.setPreviousAcceleration(
             body.acceleration()
         );
     }
+
+    createIntegrator();
 }
+
+
+void Simulation::createIntegrator() {
+
+    switch (config_.integrator) {
+
+        case IntegratorType::VelocityVerlet:
+
+            integrator_ =
+                std::make_unique<
+                    physics::VelocityVerlet
+                >(
+                    solver_
+                );
+
+            break;
+
+
+        case IntegratorType::RK4:
+
+            integrator_ =
+                std::make_unique<
+                    physics::RK4Integrator
+                >(
+                    solver_
+                );
+
+            break;
+
+
+        case IntegratorType::AdaptiveRK45:
+
+            integrator_ =
+                std::make_unique<
+                    physics::AdaptiveIntegrator
+                >(
+                    solver_,
+                    config_.adaptiveConfig
+                );
+
+            break;
+    }
+}
+
 
 void Simulation::update(
     double realDeltaTime
@@ -66,17 +122,29 @@ void Simulation::update(
 
     while (
         accumulator_ >=
-            config_.physicsStep &&
+            currentPhysicsStep_ &&
         substeps <
             config_.maxSubsteps
     ) {
 
-        physicsStep(
-            config_.physicsStep
-        );
+        const bool accepted =
+            physicsStep(
+                currentPhysicsStep_
+            );
+
+        /*
+         * Adaptive RK45 can reject a step.
+         *
+         * If rejected, don't consume simulation
+         * time. The next iteration will retry using
+         * the smaller timestep.
+         */
+        if (!accepted) {
+            continue;
+        }
 
         accumulator_ -=
-            config_.physicsStep;
+            currentPhysicsStep_;
 
         ++substeps;
     }
@@ -86,107 +154,120 @@ void Simulation::update(
     );
 }
 
-void Simulation::physicsStep(
+
+bool Simulation::physicsStep(
     double deltaTime
 ) {
-    auto& bodies = registry_.bodies();
+
+    auto& bodies =
+        registry_.bodies();
 
     if (bodies.empty()) {
-        return;
+        return false;
     }
 
-    // --------------------------------------------------
-    // 1. Save the old acceleration
-    // --------------------------------------------------
-
-    for (auto& body : bodies) {
-        body.setPreviousAcceleration(
-            body.acceleration()
-        );
+    if (!integrator_) {
+        return false;
     }
 
-    // --------------------------------------------------
-    // 2. Update positions
-    // r(t+dt) = r(t) + v(t)dt + 1/2 a(t)dt²
-    // --------------------------------------------------
-
-    for (auto& body : bodies) {
-        physics::VelocityVerlet::updatePosition(
-            body,
-            deltaTime
-        );
-    }
-
-    // --------------------------------------------------
-    // 3. Calculate new accelerations
-    // --------------------------------------------------
-
-    solver_.computeAccelerations(
-        bodies
+    integrator_->step(
+        bodies,
+        deltaTime
     );
 
-    // --------------------------------------------------
-    // 4. Update velocities
-    // v(t+dt) = v(t)
-    //          + 1/2 [a(t) + a(t+dt)]dt
-    // --------------------------------------------------
 
-    for (auto& body : bodies) {
+    /*
+     * Adaptive RK45 provides a new timestep
+     * suggestion after every attempted step.
+     */
+    if (
+        config_.integrator ==
+        IntegratorType::AdaptiveRK45
+    ) {
 
-        const math::Vec3 newAcceleration =
-            body.acceleration();
+        auto* adaptive =
+            dynamic_cast<
+                physics::AdaptiveIntegrator*
+            >(
+                integrator_.get()
+            );
 
-        physics::VelocityVerlet::updateVelocity(
-            body,
-            newAcceleration,
-            deltaTime
-        );
+        if (adaptive != nullptr) {
+
+            const auto& result =
+                adaptive->lastResult();
+
+            currentPhysicsStep_ =
+                result.nextTimestep;
+
+            return result.accepted;
+        }
     }
+
+
+    /*
+     * Fixed-step integrators always accept.
+     */
+    return true;
 }
+
 
 void Simulation::pause() {
     clock_.pause();
 }
 
+
 void Simulation::resume() {
     clock_.resume();
 }
+
 
 void Simulation::togglePause() {
     clock_.togglePause();
 }
 
+
 void Simulation::increaseSpeed() {
     clock_.increaseSpeed();
 }
+
 
 void Simulation::decreaseSpeed() {
     clock_.decreaseSpeed();
 }
 
+
 void Simulation::reset() {
     initialize();
 }
+
 
 const std::vector<
     celestial::CelestialBody
 >&
 Simulation::bodies() const noexcept {
+
     return registry_.bodies();
 }
 
+
 double
 Simulation::simulationTime() const noexcept {
+
     return clock_.simulationTime();
 }
 
+
 double
 Simulation::timeScale() const noexcept {
+
     return clock_.timeScale();
 }
 
+
 bool
 Simulation::paused() const noexcept {
+
     return clock_.paused();
 }
 

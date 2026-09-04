@@ -1,24 +1,23 @@
 #pragma once
 
+#include "solarium/physics/timestep_controller.hpp"
+
 namespace solarium::simulation {
 
-struct SimulationConfig {
-
-    // Physics timestep:
-    // one simulated hour.
-    double physicsStep =
-        3600.0;
-
-    // Simulation speed:
-    // one real second = one simulated day.
-    double timeScale =
-        86400.0;
-
-    int maxSubsteps =
-        100;
-
-    bool enableTrails =
-        true;
+enum class IntegratorType {
+    VelocityVerlet,
+    RK4,
+    AdaptiveRK45
 };
 
-} // namespace solarium::simulation
+struct SimulationConfig {
+    double physicsStep = 1.0;
+    double timeScale = 1.0;
+    int maxSubsteps = 100;
+
+    IntegratorType integrator = IntegratorType::VelocityVerlet;
+
+    physics::TimestepControllerConfig adaptiveConfig{};
+};
+
+}

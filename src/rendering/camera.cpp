@@ -306,8 +306,8 @@ void Camera::rebuildProjection() {
 
     constexpr float fov = 45.0f;
     constexpr float aspect = 16.0f / 9.0f;
-    constexpr float nearPlane = 0.1f;
-    constexpr float farPlane = 1000.0f;
+    constexpr float nearPlane = 0.001f;
+    constexpr float farPlane = 5000.0f;
 
     const float f =
         1.0f /

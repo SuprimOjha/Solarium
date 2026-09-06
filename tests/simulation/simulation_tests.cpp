@@ -52,6 +52,9 @@ int main() {
         bodies[8].name() == "Neptune"
     );
 
+    assert(bodies[3].radius() == 6.371e6);
+    assert(bodies[9].radius() == 1.7374e6);
+
     assert(bodies[9].name() == "Moon");
     assert(bodies[9].parentName() == "Earth");
     assert(bodies[12].parentName() == "Jupiter");

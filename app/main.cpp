@@ -33,6 +33,7 @@ double previousMouseX = 0.0;
 double previousMouseY = 0.0;
 
 bool firstMouse = true;
+bool leftMouseDown = false;
 bool rightMouseDown = false;
 
 // ------------------------------------------------------------
@@ -83,7 +84,7 @@ void mouseCallback(
             xOffset * 0.01,
             yOffset * 0.01
         );
-    } else if (gCamera != nullptr) {
+    } else if (gCamera != nullptr && leftMouseDown) {
         gCamera->processMouse(
             xOffset,
             yOffset
@@ -99,6 +100,10 @@ void mouseButtonCallback(
 ) {
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         rightMouseDown = action == GLFW_PRESS;
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        leftMouseDown = action == GLFW_PRESS;
     }
 
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {

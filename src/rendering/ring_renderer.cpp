@@ -78,6 +78,7 @@ void RingRenderer::render(const celestial::CelestialBody& body, const Camera& ca
     shader_.setMat4("uView", camera.viewMatrix());
     shader_.setMat4("uProjection", camera.projectionMatrix());
     shader_.setVec3("uPosition", static_cast<float>(position.x / au), static_cast<float>(position.y / au), static_cast<float>(position.z / au));
+    shader_.setFloat("uAxialTilt", static_cast<float>(body.rotation().axialTilt));
     shader_.setVec3("uColor", 0.72f, 0.63f, 0.45f);
     glBindVertexArray(vao_);
     glDrawArrays(GL_TRIANGLES, 0, static_cast<int>(vertexCount_));

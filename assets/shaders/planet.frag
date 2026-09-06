@@ -17,10 +17,16 @@ in vec3 vNormal;
 void main()
 {
     vec3 normal = normalize(vNormal);
-    vec3 lightDirection = normalize(uLightPosition - vWorldPosition);
+    vec3 lightDirection = uEmissive > 0.5
+        ? vec3(0.0, 1.0, 0.0)
+        : normalize(uLightPosition - vWorldPosition);
     float diffuse = max(dot(normal, lightDirection), 0.0);
-    float ambient = 0.08;
+    float ambient = 0.18;
     vec3 litColor = uColor * (ambient + diffuse * 0.92);
+    vec3 viewDirection = normalize(uCameraPosition - vWorldPosition);
+    vec3 halfDirection = normalize(lightDirection + viewDirection);
+    float specular = pow(max(dot(normal, halfDirection), 0.0), 48.0);
+    litColor += vec3(0.22) * specular * diffuse;
     float bands = 0.5 + 0.5 * sin(vNormal.y * 18.0);
     if (uMaterialVariant > 1.5 && uMaterialVariant < 2.5) {
         litColor *= mix(0.82, 1.12, bands);
@@ -37,7 +43,6 @@ void main()
         litColor = mix(litColor, mix(ocean, continent, land), latitude * 0.65);
     }
     vec3 finalColor = mix(litColor, uColor, clamp(uEmissive, 0.0, 1.0));
-    vec3 viewDirection = normalize(uCameraPosition - vWorldPosition);
     float rim = pow(1.0 - max(dot(normal, viewDirection), 0.0), 3.0);
     finalColor += uAtmosphere * rim * vec3(0.24, 0.55, 0.95);
     finalColor = mix(finalColor, finalColor + vec3(0.24, 0.42, 0.58), uSelected * 0.55);

@@ -11,7 +11,6 @@ astronomy, time, reference frames, and rendering as separate responsibilities.
 
 ## Screenshots
 
-Replace the image files below with screenshots from your local build.
 
 ![Solar System overview](docs/images/solarium-overview.png)
 

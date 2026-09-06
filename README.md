@@ -16,9 +16,7 @@ astronomy, time, reference frames, and rendering as separate responsibilities.
 
 ![Earth and Moon exploration](docs/images/solarium-earth.png)
 
-![Jupiter and Galilean moons](docs/images/solarium-jupiter.png)
 
-![Saturn rings and moons](docs/images/solarium-saturn.png)
 
 ## Features
 

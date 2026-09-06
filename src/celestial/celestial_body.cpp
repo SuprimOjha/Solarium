@@ -1,5 +1,6 @@
 #include "solarium/celestial/celestial_body.hpp"
 
+#include <cmath>
 #include <utility>
 
 namespace solarium::celestial {
@@ -54,6 +55,59 @@ CelestialBody::acceleration() const noexcept {
 const math::Vec3&
 CelestialBody::previousAcceleration() const noexcept {
     return previousAcceleration_;
+}
+
+BodyType
+CelestialBody::type() const noexcept {
+    return type_;
+}
+
+const std::string&
+CelestialBody::parentName() const noexcept {
+    return parentName_;
+}
+
+const OrbitalParameters&
+CelestialBody::orbitalParameters() const noexcept {
+    return orbitalParameters_;
+}
+
+const RotationParameters&
+CelestialBody::rotation() const noexcept {
+    return rotation_;
+}
+
+const VisualProperties&
+CelestialBody::visualProperties() const noexcept {
+    return visualProperties_;
+}
+
+void
+CelestialBody::advanceRotation(
+    double elapsedSeconds
+) noexcept {
+    if (rotation_.period == 0.0) {
+        return;
+    }
+
+    constexpr double fullTurn = 6.28318530717958647692;
+    rotation_.angle += fullTurn * elapsedSeconds / rotation_.period;
+    rotation_.angle = std::fmod(rotation_.angle, fullTurn);
+}
+
+void
+CelestialBody::setMetadata(
+    BodyType type,
+    std::string parentName,
+    const OrbitalParameters& orbitalParameters,
+    const RotationParameters& rotation,
+    const VisualProperties& visualProperties
+) {
+    type_ = type;
+    parentName_ = std::move(parentName);
+    orbitalParameters_ = orbitalParameters;
+    rotation_ = rotation;
+    visualProperties_ = visualProperties;
 }
 
 void

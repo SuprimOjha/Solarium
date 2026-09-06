@@ -33,6 +33,8 @@ Renderer::Renderer(
     createSphere();
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 Renderer::~Renderer() {
@@ -226,6 +228,8 @@ void Renderer::beginFrame() {
         GL_COLOR_BUFFER_BIT |
         GL_DEPTH_BUFFER_BIT
     );
+
+    glLineWidth(1.0f);
 }
 
 void Renderer::renderBody(
@@ -277,13 +281,18 @@ void Renderer::renderBody(
         z
     );
 
-    float scale = 0.1f;
+    float scale = body.type() == celestial::BodyType::Star
+        ? 0.35f
+        : body.type() == celestial::BodyType::Moon
+            ? 0.028f
+            : 0.08f;
 
-    if (body.name() == "Sun") {
+    scale *= static_cast<float>(
+        body.visualProperties().visualRadiusMultiplier / 24.0
+    );
+
+    if (body.type() == celestial::BodyType::Star) {
         scale = 0.35f;
-    }
-    else {
-        scale = 0.08f;
     }
 
     shader_.setFloat(
@@ -291,24 +300,20 @@ void Renderer::renderBody(
         scale
     );
 
-    if (body.name() == "Sun") {
+    const auto& color = body.visualProperties().baseColor;
+    shader_.setVec3(
+        "uColor",
+        static_cast<float>(color.x),
+        static_cast<float>(color.y),
+        static_cast<float>(color.z)
+    );
 
-        shader_.setVec3(
-            "uColor",
-            1.0f,
-            0.75f,
-            0.15f
-        );
-
-    } else {
-
-        shader_.setVec3(
-            "uColor",
-            0.15f,
-            0.4f,
-            1.0f
-        );
-    }
+    shader_.setVec3("uLightPosition", 0.0f, 0.0f, 0.0f);
+    shader_.setVec3("uWorldPosition", x, y, z);
+    shader_.setFloat(
+        "uEmissive",
+        static_cast<float>(body.visualProperties().emissive)
+    );
 
     glBindVertexArray(vao_);
 

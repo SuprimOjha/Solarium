@@ -21,6 +21,16 @@ public:
         double offset
     );
 
+    void processMovement(
+        double forward,
+        double right,
+        double up
+    );
+
+    void focus(const math::Vec3& target) noexcept;
+
+    void reset() noexcept;
+
     [[nodiscard]]
     math::Vec3 position() const noexcept;
 
@@ -39,6 +49,7 @@ private:
     float projection_[16];
 
     math::Vec3 position_;
+    math::Vec3 target_;
 
     void rebuildView();
     void rebuildProjection();

@@ -175,6 +175,10 @@ bool Simulation::physicsStep(
         deltaTime
     );
 
+    for (auto& body : bodies) {
+        body.advanceRotation(deltaTime);
+    }
+
 
     /*
      * Adaptive RK45 provides a new timestep

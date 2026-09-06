@@ -13,7 +13,7 @@ int main() {
         simulation.bodies();
 
     assert(
-        bodies.size() == 9
+        bodies.size() == 29
     );
 
     assert(
@@ -51,6 +51,12 @@ int main() {
     assert(
         bodies[8].name() == "Neptune"
     );
+
+    assert(bodies[9].name() == "Moon");
+    assert(bodies[9].parentName() == "Earth");
+    assert(bodies[12].parentName() == "Jupiter");
+    assert(bodies[23].parentName() == "Uranus");
+    assert(bodies[28].parentName() == "Neptune");
 
     assert(
         simulation.simulationTime() == 0.0

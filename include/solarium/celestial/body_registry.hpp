@@ -16,6 +16,12 @@ struct BodyDefinition {
 
     math::Vec3 position;
     math::Vec3 velocity;
+
+    BodyType type = BodyType::Planet;
+    const char* parentName = nullptr;
+    OrbitalParameters orbitalParameters{};
+    RotationParameters rotation{};
+    VisualProperties visualProperties{};
 };
 
 class BodyRegistry {
@@ -30,6 +36,12 @@ public:
     void add(
         const BodyDefinition& definition
     );
+
+    [[nodiscard]]
+    CelestialBody* find(const std::string& name) noexcept;
+
+    [[nodiscard]]
+    const CelestialBody* find(const std::string& name) const noexcept;
 
     [[nodiscard]]
     std::vector<CelestialBody>&

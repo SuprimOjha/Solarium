@@ -117,6 +117,9 @@ add_library(solarium_rendering
 
     src/rendering/orbit_trail.cpp
     src/rendering/trail_renderer.cpp
+    src/rendering/orbit_renderer.cpp
+    src/rendering/star_field_renderer.cpp
+    src/rendering/ring_renderer.cpp
 )
 
 target_include_directories(

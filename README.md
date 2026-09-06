@@ -8,7 +8,7 @@ The project began as a headless two-body orbital simulation and is evolving towa
 
 ## Current Version
 
-**v0.4.0 - Interactive Orbital Simulation**
+**v0.5.0 - Solar System Visualization Foundation**
 
 ### Current Capabilities
 
@@ -21,17 +21,43 @@ The project began as a headless two-body orbital simulation and is evolving towa
 * N-body solver foundation
 * Celestial body representation
 * Centralized body registry
+* Data-driven Sun, planets, and 20 major moons
+* Parent-child celestial relationships and parent-centered moon states
+* Approximate orbital, rotation, visual, and atmosphere metadata
 * Solar System simulation
 * Simulation configuration
 * Simulation clock
 * Real-time rendering
 * Camera system
+* WASD/QE camera translation, mouse orbit, and scroll zoom
 * Orbit trails
 * Trail rendering
+* Cached smooth orbital curves
+* Deterministic GPU star field
 * GLSL planet shaders
 * GLSL orbit-trail shaders
 * Physics tests
 * Simulation tests
+
+## Visualization And Accuracy
+
+The physics state remains in SI units (metres, kilograms, seconds). Rendering converts
+positions to astronomical-unit coordinates and applies presentation-only body-size
+multipliers so small bodies remain visible. These multipliers never modify the
+integrator or gravitational calculations.
+
+The registry values are approximate defaults intended for visualization. They are not
+NASA/JPL-validated ephemerides and Solarium does not claim scientific accuracy yet.
+Epoch, reference-frame, and time-scale aware ephemeris providers can replace the
+initial states later without changing renderers. A future provider can implement the
+same boundary as an analytical, file-backed, or JPL ephemeris source.
+
+The current interactive controls are:
+
+* Left mouse drag: orbit the camera.
+* Scroll: zoom.
+* `WASD`: translate horizontally; `Q/E`: move vertically.
+* `Space`: pause/resume; `+`/`-`: change simulation speed; `R`: reset; `Esc`: quit.
 
 ## Architecture
 

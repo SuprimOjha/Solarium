@@ -1,6 +1,9 @@
 #include "solarium/rendering/camera.hpp"
+#include "solarium/rendering/orbit_renderer.hpp"
 #include "solarium/rendering/orbit_trail.hpp"
+#include "solarium/rendering/ring_renderer.hpp"
 #include "solarium/rendering/renderer.hpp"
+#include "solarium/rendering/star_field_renderer.hpp"
 #include "solarium/rendering/trail_renderer.hpp"
 #include "solarium/simulation/simulation.hpp"
 
@@ -271,6 +274,9 @@ int main() {
         WindowHeight
     );
 
+    rendering::OrbitRenderer orbitRenderer;
+    rendering::StarFieldRenderer starFieldRenderer;
+    rendering::RingRenderer ringRenderer;
     rendering::TrailRenderer trailRenderer;
 
     // =========================================================
@@ -406,7 +412,18 @@ int main() {
 
             simulation.reset();
             earthTrail.clear();
+            camera.reset();
         }
+
+        const double movementSpeed = 0.08 * deltaTime;
+        camera.processMovement(
+            (keyPressed(window, GLFW_KEY_W) ? movementSpeed : 0.0) -
+            (keyPressed(window, GLFW_KEY_S) ? movementSpeed : 0.0),
+            (keyPressed(window, GLFW_KEY_D) ? movementSpeed : 0.0) -
+            (keyPressed(window, GLFW_KEY_A) ? movementSpeed : 0.0),
+            (keyPressed(window, GLFW_KEY_E) ? movementSpeed : 0.0) -
+            (keyPressed(window, GLFW_KEY_Q) ? movementSpeed : 0.0)
+        );
 
         rWasPressed =
             rPressed;
@@ -499,6 +516,21 @@ int main() {
 
         renderer.beginFrame();
 
+        starFieldRenderer.render(camera);
+
+        for (const auto& body : bodies) {
+            math::Vec3 parentPosition{};
+            if (!body.parentName().empty()) {
+                for (const auto& candidate : bodies) {
+                    if (candidate.name() == body.parentName()) {
+                        parentPosition = candidate.position();
+                        break;
+                    }
+                }
+            }
+            orbitRenderer.render(body, camera, parentPosition);
+        }
+
         // Draw Earth's orbit first.
         trailRenderer.render(
             earthTrail,
@@ -515,6 +547,8 @@ int main() {
                 body,
                 camera
             );
+
+            ringRenderer.render(body, camera);
         }
 
         renderer.endFrame();

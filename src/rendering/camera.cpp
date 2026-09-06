@@ -32,7 +32,8 @@ Camera::Camera()
       distance_(5.0f),
       view_{},
       projection_{},
-      position_{} {
+    position_{},
+    target_{} {
 
     identity(view_);
     identity(projection_);
@@ -91,6 +92,42 @@ void Camera::processScroll(
     rebuildView();
 }
 
+void Camera::processMovement(
+    double forward,
+    double right,
+    double up
+) {
+    const float yaw = radians(yaw_);
+    const math::Vec3 forwardVector{
+        -std::cos(yaw),
+        0.0,
+        -std::sin(yaw)
+    };
+    const math::Vec3 rightVector{
+        -std::sin(yaw),
+        0.0,
+        std::cos(yaw)
+    };
+
+    target_ += forwardVector * forward;
+    target_ += rightVector * right;
+    target_.y += up;
+    rebuildView();
+}
+
+void Camera::focus(const math::Vec3& target) noexcept {
+    target_ = target;
+    rebuildView();
+}
+
+void Camera::reset() noexcept {
+    yaw_ = 45.0f;
+    pitch_ = 20.0f;
+    distance_ = 5.0f;
+    target_ = {};
+    rebuildView();
+}
+
 math::Vec3 Camera::position()
     const noexcept {
 
@@ -131,14 +168,18 @@ void Camera::rebuildView() {
         std::cos(pitch) *
         std::sin(yaw);
 
+    position_.x += static_cast<float>(target_.x);
+    position_.y += static_cast<float>(target_.y);
+    position_.z += static_cast<float>(target_.z);
+
     const float fx =
-        -position_.x;
+        static_cast<float>(target_.x) - position_.x;
 
     const float fy =
-        -position_.y;
+        static_cast<float>(target_.y) - position_.y;
 
     const float fz =
-        -position_.z;
+        static_cast<float>(target_.z) - position_.z;
 
     const float length =
         std::sqrt(

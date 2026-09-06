@@ -237,7 +237,7 @@ int main() {
         glfwCreateWindow(
             WindowWidth,
             WindowHeight,
-            "Solarium V0.6",
+            "Solarium V1.0",
             nullptr,
             nullptr
         );
@@ -751,7 +751,7 @@ int main() {
         std::ostringstream title;
 
         title
-            << "Solarium V0.6 | "
+            << "Solarium V1.0 | "
             << (
                 simulation.paused()
                     ? "PAUSED"

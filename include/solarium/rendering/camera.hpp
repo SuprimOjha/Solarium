@@ -45,10 +45,23 @@ public:
     void setMovementSpeed(float speed) noexcept;
     void setZoomSpeed(float speed) noexcept;
 
+    void setAspectRatio(float aspectRatio) noexcept;
+
+    void frameScene(
+        const math::Vec3& center,
+        float radius,
+        float margin = 1.15f
+    ) noexcept;
+
     [[nodiscard]] float movementSpeed() const noexcept;
     [[nodiscard]] float zoomSpeed() const noexcept;
 
     void focus(const math::Vec3& target) noexcept;
+
+    void focus(
+        const math::Vec3& target,
+        float distance
+    ) noexcept;
 
     void setFollowTarget(const math::Vec3& target) noexcept;
 
@@ -70,6 +83,7 @@ private:
     float desiredDistance_;
     float movementSpeed_;
     float zoomSpeed_;
+    float aspectRatio_;
     CameraMode mode_;
 
     float view_[16];

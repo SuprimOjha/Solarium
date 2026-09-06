@@ -37,6 +37,8 @@ struct OrbitalParameters {
     double inclination = 0.0;
     double longitudeAscendingNode = 0.0;
     double argumentOfPeriapsis = 0.0;
+    double trueAnomaly = 0.0;
+    double eccentricAnomaly = 0.0;
     double meanAnomaly = 0.0;
     double period = 0.0;
 };

@@ -27,6 +27,12 @@ public:
 
     void clear();
 
+    [[nodiscard]]
+    static std::vector<math::Vec3> generateOrbitPoints(
+        const celestial::OrbitalParameters& orbit,
+        std::size_t segments
+    );
+
 private:
     struct OrbitBuffer {
         unsigned int vao = 0;

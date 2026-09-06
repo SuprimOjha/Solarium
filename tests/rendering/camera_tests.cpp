@@ -11,6 +11,13 @@ int main() {
     assert(camera.mode() == rendering::CameraMode::Orbit);
     assert(camera.zoomSpeed() > 0.0f);
 
+    const float wideProjection = camera.projectionMatrix()[0];
+    camera.setAspectRatio(16.0f / 9.0f);
+    camera.frameScene({0.0, 0.0, 0.0}, 30.0f);
+    assert(camera.position().magnitude() > 30.0);
+    camera.setAspectRatio(9.0f / 16.0f);
+    assert(camera.projectionMatrix()[0] > wideProjection);
+
     const math::Vec3 initial = camera.position();
     camera.setMode(rendering::CameraMode::Follow);
     camera.setMovementSpeed(0.2f);

@@ -406,3 +406,19 @@ add_test(
     NAME BodyPickerTests
     COMMAND body_picker_tests
 )
+
+add_executable(
+    orbit_geometry_tests
+    tests/rendering/orbit_geometry_tests.cpp
+)
+
+target_link_libraries(
+    orbit_geometry_tests
+    PRIVATE
+        solarium_rendering
+)
+
+add_test(
+    NAME OrbitGeometryTests
+    COMMAND orbit_geometry_tests
+)

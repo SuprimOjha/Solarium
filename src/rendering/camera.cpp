@@ -34,6 +34,7 @@ Camera::Camera()
             desiredDistance_(5.0f),
             movementSpeed_(0.08f),
             zoomSpeed_(1.0f),
+            aspectRatio_(16.0f / 9.0f),
             mode_(CameraMode::Orbit),
       view_{},
       projection_{},
@@ -153,6 +154,30 @@ void Camera::setZoomSpeed(float speed) noexcept {
     zoomSpeed_ = std::max(0.01f, speed);
 }
 
+void Camera::setAspectRatio(float aspectRatio) noexcept {
+    aspectRatio_ = std::max(0.1f, aspectRatio);
+    rebuildProjection();
+}
+
+void Camera::frameScene(
+    const math::Vec3& center,
+    float radius,
+    float margin
+) noexcept {
+    const float safeRadius = std::max(0.01f, radius);
+    const float safeMargin = std::max(1.0f, margin);
+    const float verticalDistance = safeRadius * safeMargin /
+        std::tan(radians(42.0f) * 0.5f);
+    const float horizontalDistance = verticalDistance /
+        std::max(0.1f, aspectRatio_);
+
+    desiredTarget_ = center;
+    target_ = center;
+    desiredDistance_ = std::max(verticalDistance, horizontalDistance);
+    distance_ = desiredDistance_;
+    rebuildView();
+}
+
 float Camera::movementSpeed() const noexcept {
     return movementSpeed_;
 }
@@ -163,6 +188,14 @@ float Camera::zoomSpeed() const noexcept {
 
 void Camera::focus(const math::Vec3& target) noexcept {
     desiredTarget_ = target;
+}
+
+void Camera::focus(
+    const math::Vec3& target,
+    float distance
+) noexcept {
+    desiredTarget_ = target;
+    desiredDistance_ = std::clamp(distance, 0.03f, 5000.0f);
 }
 
 void Camera::setFollowTarget(const math::Vec3& target) noexcept {
@@ -304,8 +337,7 @@ void Camera::rebuildView() {
 
 void Camera::rebuildProjection() {
 
-    constexpr float fov = 45.0f;
-    constexpr float aspect = 16.0f / 9.0f;
+    constexpr float fov = 42.0f;
     constexpr float nearPlane = 0.001f;
     constexpr float farPlane = 5000.0f;
 
@@ -320,7 +352,7 @@ void Camera::rebuildProjection() {
     }
 
     projection_[0] =
-        f / aspect;
+        f / aspectRatio_;
 
     projection_[5] = f;
 

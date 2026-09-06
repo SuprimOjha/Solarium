@@ -4,9 +4,43 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 #include <string>
 
 namespace solarium::celestial {
+
+namespace {
+
+math::Vec3 rotatePerifocal(
+    const math::Vec3& vector,
+    double longitudeAscendingNode,
+    double inclination,
+    double argumentOfPeriapsis
+) {
+    const double cosNode = std::cos(longitudeAscendingNode);
+    const double sinNode = std::sin(longitudeAscendingNode);
+    const double cosInclination = std::cos(inclination);
+    const double sinInclination = std::sin(inclination);
+    const double cosPeriapsis = std::cos(argumentOfPeriapsis);
+    const double sinPeriapsis = std::sin(argumentOfPeriapsis);
+
+    const double periapsisX = cosPeriapsis * vector.x -
+        sinPeriapsis * vector.y;
+    const double periapsisY = sinPeriapsis * vector.x +
+        cosPeriapsis * vector.y;
+    const double inclinedY = cosInclination * periapsisY -
+        sinInclination * vector.z;
+    const double inclinedZ = sinInclination * periapsisY +
+        cosInclination * vector.z;
+
+    return {
+        cosNode * periapsisX - sinNode * inclinedY,
+        sinNode * periapsisX + cosNode * inclinedY,
+        inclinedZ
+    };
+}
+
+} // namespace
 
 BodyRegistry::BodyRegistry()
     : bodies_{} {
@@ -305,39 +339,75 @@ void BodyRegistry::initializeSolarSystem() {
         const char* name,
         double semiMajorAxis,
         double eccentricity,
-        double period
+        double period,
+        double inclination,
+        double longitudeAscendingNode,
+        double argumentOfPeriapsis
     ) {
         auto* body = find(name);
-        if (body == nullptr) {
+        auto* parent = find("Sun");
+        if (body == nullptr || parent == nullptr) {
             return;
         }
 
+        const OrbitalParameters orbit{
+            semiMajorAxis,
+            eccentricity,
+            inclination,
+            longitudeAscendingNode,
+            argumentOfPeriapsis,
+            0.0,
+            0.0,
+            period
+        };
         body->setMetadata(
             body->type(),
             body->parentName(),
-            OrbitalParameters{
-                semiMajorAxis,
-                eccentricity,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                period
-            },
+            orbit,
             body->rotation(),
             body->visualProperties()
         );
+
+        const double gravitationalParameter =
+            GravitationalConstant * (parent->mass() + body->mass());
+        const double radius = semiMajorAxis * (1.0 - eccentricity);
+        const double angularMomentum = std::sqrt(
+            gravitationalParameter * semiMajorAxis *
+            (1.0 - eccentricity * eccentricity)
+        );
+        const math::Vec3 localPosition{radius, 0.0, 0.0};
+        const math::Vec3 localVelocity{
+            0.0,
+            angularMomentum / radius,
+            0.0
+        };
+        body->setPosition(
+            parent->position() + rotatePerifocal(
+                localPosition,
+                longitudeAscendingNode,
+                inclination,
+                argumentOfPeriapsis
+            )
+        );
+        body->setVelocity(
+            parent->velocity() + rotatePerifocal(
+                localVelocity,
+                longitudeAscendingNode,
+                inclination,
+                argumentOfPeriapsis
+            )
+        );
     };
 
-    setOrbit("Mercury", 0.387098 * AstronomicalUnit, 0.2056, 87.969 * 86'400.0);
-    setOrbit("Venus", 0.723332 * AstronomicalUnit, 0.0068, 224.701 * 86'400.0);
-    setOrbit("Earth", AstronomicalUnit, 0.0167, 365.256 * 86'400.0);
-    setOrbit("Mars", 1.523679 * AstronomicalUnit, 0.0934, 686.98 * 86'400.0);
-    setOrbit("Jupiter", 5.2044 * AstronomicalUnit, 0.0489, 4332.59 * 86'400.0);
-    setOrbit("Saturn", 9.5826 * AstronomicalUnit, 0.0565, 10'759.22 * 86'400.0);
-    setOrbit("Uranus", 19.2184 * AstronomicalUnit, 0.0463, 30'688.5 * 86'400.0);
-    setOrbit("Neptune", 30.11 * AstronomicalUnit, 0.0095, 60'182.0 * 86'400.0);
-
+    constexpr double degree = std::numbers::pi / 180.0;
+    setOrbit("Mercury", 0.387098 * AstronomicalUnit, 0.2056, 87.969 * 86'400.0, 7.00 * degree, 48.33 * degree, 29.12 * degree);
+    setOrbit("Venus", 0.723332 * AstronomicalUnit, 0.0068, 224.701 * 86'400.0, 3.39 * degree, 76.68 * degree, 54.89 * degree);
+    setOrbit("Earth", AstronomicalUnit, 0.0167, 365.256 * 86'400.0, 0.00, 0.00, 102.94 * degree);
+    setOrbit("Mars", 1.523679 * AstronomicalUnit, 0.0934, 686.98 * 86'400.0, 1.85 * degree, 49.56 * degree, 286.50 * degree);
+    setOrbit("Jupiter", 5.2044 * AstronomicalUnit, 0.0489, 4332.59 * 86'400.0, 1.30 * degree, 100.47 * degree, 273.87 * degree);
+    setOrbit("Saturn", 9.5826 * AstronomicalUnit, 0.0565, 10'759.22 * 86'400.0, 2.49 * degree, 113.66 * degree, 339.39 * degree);
+    setOrbit("Uranus", 19.2184 * AstronomicalUnit, 0.0463, 30'688.5 * 86'400.0, 0.77 * degree, 74.01 * degree, 96.99 * degree);
+    setOrbit("Neptune", 30.11 * AstronomicalUnit, 0.0095, 60'182.0 * 86'400.0, 1.77 * degree, 131.78 * degree, 276.34 * degree);
     const auto addMoon = [this](
         const char* name,
         const char* parentName,

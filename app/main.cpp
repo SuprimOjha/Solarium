@@ -10,6 +10,8 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -22,6 +24,9 @@ namespace {
 
 constexpr int WindowWidth = 1280;
 constexpr int WindowHeight = 720;
+
+int gFramebufferWidth = WindowWidth;
+int gFramebufferHeight = WindowHeight;
 
 solarium::rendering::Camera* gCamera = nullptr;
 
@@ -119,6 +124,22 @@ void scrollCallback(
 ) {
     if (gCamera != nullptr) {
         gCamera->processScroll(yOffset);
+    }
+}
+
+void framebufferSizeCallback(
+    GLFWwindow*,
+    int width,
+    int height
+) {
+    gFramebufferWidth = std::max(1, width);
+    gFramebufferHeight = std::max(1, height);
+    glViewport(0, 0, gFramebufferWidth, gFramebufferHeight);
+    if (gCamera != nullptr) {
+        gCamera->setAspectRatio(
+            static_cast<float>(gFramebufferWidth) /
+            static_cast<float>(gFramebufferHeight)
+        );
     }
 }
 
@@ -323,20 +344,54 @@ int main() {
         scrollCallback
     );
 
+    glfwSetFramebufferSizeCallback(
+        window,
+        framebufferSizeCallback
+    );
+
+    glfwGetFramebufferSize(
+        window,
+        &gFramebufferWidth,
+        &gFramebufferHeight
+    );
+    framebufferSizeCallback(
+        window,
+        gFramebufferWidth,
+        gFramebufferHeight
+    );
+
     // =========================================================
     // SIMULATION
     // =========================================================
 
     simulation::Simulation simulation;
 
+    const auto frameSolarSystem = [&]() {
+        constexpr double au = 1.495978707e11;
+        double outerExtent = 1.0;
+        for (const auto& body : simulation.bodies()) {
+            if (body.type() == celestial::BodyType::Moon) {
+                continue;
+            }
+            const auto& orbit = body.orbitalParameters();
+            outerExtent = std::max(
+                outerExtent,
+                orbit.semiMajorAxis * (1.0 + orbit.eccentricity) / au
+            );
+        }
+        camera.frameScene({0.0, 0.0, 0.0}, static_cast<float>(outerExtent));
+    };
+
     // =========================================================
     // RENDERER
     // =========================================================
 
     rendering::Renderer renderer(
-        WindowWidth,
-        WindowHeight
+        gFramebufferWidth,
+        gFramebufferHeight
     );
+
+    frameSolarSystem();
 
     rendering::OrbitRenderer orbitRenderer;
     rendering::StarFieldRenderer starFieldRenderer;
@@ -450,8 +505,8 @@ int main() {
                 camera,
                 cursorX,
                 cursorY,
-                WindowWidth,
-                WindowHeight
+                gFramebufferWidth,
+                gFramebufferHeight
             );
         }
         leftMouseWasPressed = leftMousePressed;
@@ -515,6 +570,7 @@ int main() {
                 trail->clear();
             }
             camera.reset();
+            frameSolarSystem();
             followSelected = false;
         }
 
@@ -586,13 +642,33 @@ int main() {
         if (fPressed && !fWasPressed && selectedBody < simulation.bodies().size()) {
             camera.setMode(rendering::CameraMode::Orbit);
             followSelected = false;
-            camera.focus(renderPosition(simulation.bodies()[selectedBody].position()));
+            const auto& body = simulation.bodies()[selectedBody];
+            const float renderRadius = static_cast<float>(
+                body.radius() / 1.495978707e11 *
+                body.visualProperties().visualRadiusMultiplier
+            );
+            const float localOrbitRadius = body.type() == celestial::BodyType::Moon
+                ? static_cast<float>(body.orbitalParameters().semiMajorAxis / 1.495978707e11 * 5.0)
+                : 0.0f;
+            camera.focus(
+                renderPosition(body.position()),
+                std::max(0.12f, std::max(renderRadius * 8.0f, localOrbitRadius))
+            );
         }
         fWasPressed = fPressed;
 
         const bool gPressed = keyPressed(window, GLFW_KEY_G);
         if (gPressed && !gWasPressed && selectedBody < simulation.bodies().size()) {
             followSelected = !followSelected;
+            const auto& body = simulation.bodies()[selectedBody];
+            camera.focus(
+                renderPosition(body.position()),
+                std::max(
+                    0.12f,
+                    static_cast<float>(body.radius() / 1.495978707e11 *
+                        body.visualProperties().visualRadiusMultiplier * 8.0)
+                )
+            );
             camera.setMode(
                 followSelected
                     ? rendering::CameraMode::Follow

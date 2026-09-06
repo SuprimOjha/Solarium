@@ -5,6 +5,7 @@
 #include <glad/gl.h>
 
 #include <cmath>
+#include <algorithm>
 #include <vector>
 
 namespace solarium::rendering {
@@ -66,19 +67,13 @@ void OrbitRenderer::buildBuffer(
     std::vector<OrbitVertex> vertices;
     vertices.reserve(segments_ + 1);
 
+    const auto points = generateOrbitPoints(orbit, segments_);
     const double scale = math::AstronomicalUnit;
-    const double semiMinorAxis = orbit.semiMajorAxis *
-        std::sqrt(std::max(0.0, 1.0 - orbit.eccentricity * orbit.eccentricity));
-
-    for (std::size_t index = 0; index <= segments_; ++index) {
-        const double angle = 2.0 * Pi * static_cast<double>(index) /
-            static_cast<double>(segments_);
-        const double x = orbit.semiMajorAxis * std::cos(angle) / scale;
-        const double z = semiMinorAxis * std::sin(angle) / scale;
+    for (const auto& point : points) {
         vertices.push_back({
-            static_cast<float>(x),
-            static_cast<float>(z * std::sin(orbit.inclination)),
-            static_cast<float>(z * std::cos(orbit.inclination))
+            static_cast<float>(point.x / scale),
+            static_cast<float>(point.y / scale),
+            static_cast<float>(point.z / scale)
         });
     }
 
@@ -96,6 +91,48 @@ void OrbitRenderer::buildBuffer(
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(OrbitVertex), nullptr);
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
+}
+
+std::vector<math::Vec3> OrbitRenderer::generateOrbitPoints(
+    const celestial::OrbitalParameters& orbit,
+    std::size_t segments
+) {
+    const std::size_t sampleCount = std::max<std::size_t>(segments, 16);
+    std::vector<math::Vec3> points;
+    points.reserve(sampleCount + 1);
+
+    const double eccentricity = std::clamp(orbit.eccentricity, 0.0, 0.999999);
+    const double parameter = orbit.semiMajorAxis *
+        (1.0 - eccentricity * eccentricity);
+    const double cosNode = std::cos(orbit.longitudeAscendingNode);
+    const double sinNode = std::sin(orbit.longitudeAscendingNode);
+    const double cosInclination = std::cos(orbit.inclination);
+    const double sinInclination = std::sin(orbit.inclination);
+    const double cosPeriapsis = std::cos(orbit.argumentOfPeriapsis);
+    const double sinPeriapsis = std::sin(orbit.argumentOfPeriapsis);
+
+    for (std::size_t index = 0; index <= sampleCount; ++index) {
+        const double trueAnomaly = 2.0 * Pi * static_cast<double>(index) /
+            static_cast<double>(sampleCount);
+        const double radius = parameter /
+            (1.0 + eccentricity * std::cos(trueAnomaly));
+
+        // Perifocal coordinates, followed by Rz(Omega) Rx(i) Rz(omega).
+        const double periX = radius * std::cos(trueAnomaly);
+        const double periY = radius * std::sin(trueAnomaly);
+        const double rotatedPeriX = cosPeriapsis * periX - sinPeriapsis * periY;
+        const double rotatedPeriY = sinPeriapsis * periX + cosPeriapsis * periY;
+        const double inclinedY = cosInclination * rotatedPeriY;
+        const double inclinedZ = sinInclination * rotatedPeriY;
+
+        points.emplace_back(
+            cosNode * rotatedPeriX - sinNode * inclinedY,
+            sinNode * rotatedPeriX + cosNode * inclinedY,
+            inclinedZ
+        );
+    }
+
+    return points;
 }
 
 void OrbitRenderer::render(

@@ -1,143 +1,155 @@
 # Solarium
 
-**High-performance C++ celestial mechanics and interactive Solar System simulation engine.**
+Solarium is a C++20 desktop Solar System explorer built around a real numerical
+simulation core and a lightweight OpenGL renderer. It is designed to make the
+structure and motion of the Solar System easy to explore while keeping physics,
+astronomy, time, reference frames, and rendering as separate responsibilities.
 
-Solarium is an experimental physics, rendering, and simulation project built from first principles in modern C++.
+> Solarium currently uses approximate visualization data. It is not NASA/JPL
+> validated and does not claim authoritative astronomical accuracy. Ephemeris
+> integration and numerical validation are the next scientific milestone.
 
-The project began as a headless two-body orbital simulation and is evolving toward an interactive Solar System simulation platform combining celestial mechanics, numerical integration, real-time rendering, orbital visualization, and high-performance scientific computing.
+## Screenshots
 
-## Current Version
+Replace the image files below with screenshots from your local build.
 
-**v0.5.0 - Solar System Visualization Foundation**
+![Solar System overview](docs/images/solarium-overview.png)
 
-### Current Capabilities
+![Earth and Moon exploration](docs/images/solarium-earth.png)
 
-* C++20.
-* CMake
-* 3D vector mathematics
-* Physical constants
-* Newtonian gravitational acceleration
-* Velocity Verlet integration
-* N-body solver foundation
-* Celestial body representation
-* Centralized body registry
-* Data-driven Sun, planets, and 20 major moons
-* Parent-child celestial relationships and parent-centered moon states
-* Approximate orbital, rotation, visual, and atmosphere metadata
-* Solar System simulation
-* Simulation configuration
-* Simulation clock
-* Real-time rendering
-* Camera system
-* WASD/QE camera translation, mouse orbit, and scroll zoom
-* Orbit trails
-* Trail rendering
-* Cached smooth orbital curves
-* Deterministic GPU star field
-* GLSL planet shaders
-* GLSL orbit-trail shaders
-* Physics tests
-* Simulation tests
+![Jupiter and Galilean moons](docs/images/solarium-jupiter.png)
 
-## Visualization And Accuracy
+![Saturn rings and moons](docs/images/solarium-saturn.png)
 
-The physics state remains in SI units (metres, kilograms, seconds). Rendering converts
-positions to astronomical-unit coordinates and applies presentation-only body-size
-multipliers so small bodies remain visible. These multipliers never modify the
-integrator or gravitational calculations.
+## Features
 
-The registry values are approximate defaults intended for visualization. They are not
-NASA/JPL-validated ephemerides and Solarium does not claim scientific accuracy yet.
-Epoch, reference-frame, and time-scale aware ephemeris providers can replace the
-initial states later without changing renderers. A future provider can implement the
-same boundary as an analytical, file-backed, or JPL ephemeris source.
+- C++20, CMake, Ninja, GLFW, OpenGL 3.3, and GLAD.
+- Newtonian N-body gravity with Velocity Verlet, RK4, and adaptive RK45 support.
+- Explicit astronomical time and reference-frame modules.
+- Data-driven Sun, eight planets, and twenty major moons.
+- Arbitrary parent-child celestial relationships.
+- Parent-centered moon states compatible with future ephemeris providers.
+- GPU-cached star field, smooth orbital curves, bounded trajectory trails, and Saturn rings.
+- Directional solar lighting, axial rotation, atmospheric rim lighting, and procedural material variations.
+- Screen-space body picking with selection highlighting.
+- Free/orbit/follow camera behavior, focus, pan, zoom, and keyboard navigation.
+- Pause, time-scale control, orbit visibility, trail visibility, and reset controls.
 
-The current interactive controls are:
+## Celestial Catalog
 
-* Left mouse drag: orbit the camera.
-* Scroll: zoom.
-* `WASD`: translate horizontally; `Q/E`: move vertically.
-* `Space`: pause/resume; `+`/`-`: change simulation speed; `R`: reset; `Esc`: quit.
+The default catalog contains:
+
+- Sun
+- Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune
+- Earth: Moon
+- Mars: Phobos, Deimos
+- Jupiter: Io, Europa, Ganymede, Callisto
+- Saturn: Mimas, Enceladus, Tethys, Dione, Rhea, Titan, Iapetus
+- Uranus: Miranda, Ariel, Umbriel, Titania, Oberon
+- Neptune: Triton
+
+All body definitions live in the celestial registry rather than in OpenGL draw
+code. A definition carries physical state, type, parent name, orbital parameters,
+rotation parameters, and visual properties.
+
+## Controls
+
+| Input | Action |
+| --- | --- |
+| Left mouse drag | Orbit camera |
+| Right mouse drag | Pan camera |
+| Mouse wheel | Smooth zoom |
+| `WASD` | Move camera target |
+| `Q` / `E` | Move camera target vertically |
+| Left click | Select a visible body |
+| `F` | Focus selected body |
+| `G` | Follow or stop following selected body |
+| `V` | Toggle free and orbit camera modes |
+| `O` | Toggle orbital curves |
+| `P` | Toggle planet orbital curves |
+| `M` | Toggle moon orbital curves |
+| `L` | Show only the selected body's orbit |
+| `T` | Toggle trajectory trails |
+| `1` / `2` / `3` | Realistic / Presentation / Exploration scale |
+| `Space` | Pause or resume simulation |
+| `+` / `-` | Increase or decrease simulation speed |
+| `R` | Reset simulation and camera |
+| `Esc` | Exit |
+
+The window title provides a compact live HUD with simulation state, time scale,
+FPS, camera mode, orbit/trail state, and selected-body summary. The selected
+body information is intentionally kept out of the physics and rendering APIs so
+it can later be replaced by a richer UI layer.
+
+## Physics And Rendering Scale
+
+The simulation uses SI units: metres, kilograms, and seconds. Rendering converts
+physical positions into astronomical-unit coordinates. Body and moon size
+multipliers are visualization-only; they never alter gravity, integration, or
+stored physical state.
+
+Stars are generated on a distant sphere and remain fixed in the simulation frame.
+Orbits are cached GPU line geometry. Trails use bounded buffers and record actual
+integrated body states rather than an independent animation.
+
+The three visualization modes change only renderer multipliers:
+
+- **Realistic** keeps body sizes closest to physical proportions.
+- **Presentation** is the default balanced view for system-wide exploration.
+- **Exploration** enlarges bodies for close inspection of moons and surfaces.
 
 ## Architecture
 
-The current Solarium source architecture is organized into independent modules for mathematics, physics, celestial systems, simulation, and rendering.
+```text
+include/solarium/
+  celestial/      body state, definitions, registry
+  math/           vectors and constants
+  orbital/        orbital conversion and Kepler utilities
+  physics/        gravity and numerical integrators
+  reference/      coordinate and reference-frame transforms
+  simulation/     clock, configuration, simulation orchestration
+  rendering/      camera, bodies, orbits, rings, stars, trails, picking
+  time/           astronomical time and conversions
+
+src/
+  celestial/ physics/ orbital/ reference/ simulation/ time/ rendering/
+
+assets/shaders/
+  planet, orbit, ring, star, and trail shader programs
+```
+
+The application composes these modules in `app/main.cpp`; the numerical solver
+does not know about OpenGL, and renderers consume already-available body state.
+
+## Build
+
+From the repository root in an MSYS2 UCRT64 environment:
 
 ```text
-Solarium/
-│
-├── CMakeLists.txt
-├── CMakePresets.json
-├── LICENSE
-├── README.md
-├── .gitignore
-│
-├── app/
-│   └── main.cpp
-│
-├── assets/
-│   └── shaders/
-│       ├── planet.frag
-│       ├── planet.vert
-│       ├── trail.frag
-│       └── trail.vert
-│
-├── external/
-│   └── glad/
-│       ├── include/
-│       │   ├── glad/
-│       │   │   └── gl.h
-│       │   └── KHR/
-│       │       └── khrplatform.h
-│       │
-│       └── src/
-│           └── gl.c
-│
-├── include/
-│   └── solarium/
-│       │
-│       ├── celestial/
-│       │   ├── body_registry.hpp
-│       │   └── celestial_body.hpp
-│       │
-│       ├── math/
-│       │   ├── constants.hpp
-│       │   └── vec3.hpp
-│       │
-│       ├── physics/
-│       │   ├── gravity.hpp
-│       │   ├── n_body_solver.hpp
-│       │   └── verlet.hpp
-│       │
-│       ├── rendering/
-│       │   ├── camera.hpp
-│       │   ├── orbit_trail.hpp
-│       │   ├── renderer.hpp
-│       │   ├── shader.hpp
-│       │   └── trail_renderer.hpp
-│       │
-│       └── simulation/
-│           ├── simulation.hpp
-│           ├── simulation_clock.hpp
-│           └── simulation_config.hpp
-│
-├── src/
-│   │
-│   ├── celestial/
-│   │   ├── body_registry.cpp
-│   │   └── celestial_body.cpp
-│   │
-│   ├── math/
-│   │   └── vec3.cpp
-│   │
-│   ├── physics/
-│   │   ├── gravity.cpp
-│   │   ├── n_body_solver.cpp
-│   │   └── verlet.cpp
-│   │
-│   ├── rendering/
-│   │   ├── camera.cpp
-│   │   ├── orbit_trail.cpp
-│   │   ├── renderer.cpp
-│
+cmake --preset default
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
+
+Run `build/solarium.exe` from the repository root so relative shader paths such
+as `assets/shaders/planet.vert` resolve correctly.
+
+## Data Status And Future Ephemerides
+
+The included masses, radii, initial states, orbital parameters, and visual values
+are approximate defaults for exploration. They are deliberately not presented as
+NASA/JPL data. The registry and simulation state are structured so a future
+`EphemerisProvider` can supply epoch-aware, reference-frame-aware states without
+requiring changes to the renderers. Possible future providers include analytical,
+file-backed, and JPL-backed implementations.
+
+## Quality And Performance
+
+The current default targets modest integrated or entry-level GPUs: static meshes
+are cached, stars use one vertex buffer, orbit geometry is generated once, and
+trails are bounded. A formal LOW/MEDIUM/HIGH quality profile is planned for the
+next rendering pass; current geometry counts are intentionally conservative.
+
+## License
+
+See [LICENSE](LICENSE).

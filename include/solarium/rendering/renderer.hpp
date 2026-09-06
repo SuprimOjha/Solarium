@@ -8,6 +8,12 @@
 
 namespace solarium::rendering {
 
+enum class VisualizationMode {
+    Realistic,
+    Presentation,
+    Exploration
+};
+
 class Renderer {
 public:
     Renderer(
@@ -24,10 +30,15 @@ public:
 
     void renderBody(
         const celestial::CelestialBody& body,
-        const Camera& camera
+        const Camera& camera,
+        bool selected = false
     );
 
     void endFrame();
+
+    void setVisualizationMode(VisualizationMode mode) noexcept;
+
+    [[nodiscard]] VisualizationMode visualizationMode() const noexcept;
 
 private:
     unsigned int vao_;
@@ -35,6 +46,7 @@ private:
     unsigned int ebo_;
 
     unsigned int indexCount_;
+    VisualizationMode visualizationMode_;
 
     Shader shader_;
 

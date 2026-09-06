@@ -25,6 +25,7 @@ Renderer::Renderer(
       vbo_(0),
       ebo_(0),
       indexCount_(0),
+    visualizationMode_(VisualizationMode::Presentation),
       shader_(
           "assets/shaders/planet.vert",
           "assets/shaders/planet.frag"
@@ -232,9 +233,18 @@ void Renderer::beginFrame() {
     glLineWidth(1.0f);
 }
 
+void Renderer::setVisualizationMode(VisualizationMode mode) noexcept {
+    visualizationMode_ = mode;
+}
+
+VisualizationMode Renderer::visualizationMode() const noexcept {
+    return visualizationMode_;
+}
+
 void Renderer::renderBody(
     const celestial::CelestialBody& body,
-    const Camera& camera
+    const Camera& camera,
+    bool selected
 ) {
 
     shader_.bind();
@@ -287,6 +297,11 @@ void Renderer::renderBody(
             ? 0.028f
             : 0.08f;
 
+    const float modeMultiplier = visualizationMode_ == VisualizationMode::Realistic
+        ? 0.45f
+        : visualizationMode_ == VisualizationMode::Exploration ? 1.8f : 1.0f;
+    scale *= modeMultiplier;
+
     scale *= static_cast<float>(
         body.visualProperties().visualRadiusMultiplier / 24.0
     );
@@ -313,6 +328,26 @@ void Renderer::renderBody(
     shader_.setFloat(
         "uEmissive",
         static_cast<float>(body.visualProperties().emissive)
+    );
+    shader_.setFloat("uSelected", selected ? 1.0f : 0.0f);
+    shader_.setFloat("uRotationAngle", static_cast<float>(body.rotation().angle));
+    shader_.setFloat("uAxialTilt", static_cast<float>(body.rotation().axialTilt));
+    shader_.setFloat(
+        "uAtmosphere",
+        body.visualProperties().hasAtmosphere ? 0.8f : 0.0f
+    );
+    const float materialVariant = body.name() == "Earth"
+        ? 4.0f
+        : body.type() == celestial::BodyType::Moon
+        ? 3.0f
+        : body.visualProperties().hasAtmosphere ? 2.0f : 1.0f;
+    shader_.setFloat("uMaterialVariant", materialVariant);
+    const auto cameraPosition = camera.position();
+    shader_.setVec3(
+        "uCameraPosition",
+        cameraPosition.x,
+        cameraPosition.y,
+        cameraPosition.z
     );
 
     glBindVertexArray(vao_);

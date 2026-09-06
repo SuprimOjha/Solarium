@@ -4,6 +4,12 @@
 
 namespace solarium::rendering {
 
+enum class CameraMode {
+    Free,
+    Orbit,
+    Follow
+};
+
 class Camera {
 public:
     Camera();
@@ -27,7 +33,24 @@ public:
         double up
     );
 
+    void processPan(
+        double horizontal,
+        double vertical
+    );
+
+    void setMode(CameraMode mode) noexcept;
+
+    [[nodiscard]] CameraMode mode() const noexcept;
+
+    void setMovementSpeed(float speed) noexcept;
+    void setZoomSpeed(float speed) noexcept;
+
+    [[nodiscard]] float movementSpeed() const noexcept;
+    [[nodiscard]] float zoomSpeed() const noexcept;
+
     void focus(const math::Vec3& target) noexcept;
+
+    void setFollowTarget(const math::Vec3& target) noexcept;
 
     void reset() noexcept;
 
@@ -44,12 +67,17 @@ private:
     float yaw_;
     float pitch_;
     float distance_;
+    float desiredDistance_;
+    float movementSpeed_;
+    float zoomSpeed_;
+    CameraMode mode_;
 
     float view_[16];
     float projection_[16];
 
     math::Vec3 position_;
     math::Vec3 target_;
+    math::Vec3 desiredTarget_;
 
     void rebuildView();
     void rebuildProjection();

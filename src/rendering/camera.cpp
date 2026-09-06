@@ -1,5 +1,6 @@
 #include "solarium/rendering/camera.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 namespace {
@@ -30,10 +31,15 @@ Camera::Camera()
     : yaw_(45.0f),
       pitch_(20.0f),
       distance_(5.0f),
+            desiredDistance_(5.0f),
+            movementSpeed_(0.08f),
+            zoomSpeed_(1.0f),
+            mode_(CameraMode::Orbit),
       view_{},
       projection_{},
-    position_{},
-    target_{} {
+            position_{},
+            target_{},
+            desiredTarget_{} {
 
     identity(view_);
     identity(projection_);
@@ -43,8 +49,13 @@ Camera::Camera()
 }
 
 void Camera::update(
-    double
+    double deltaTime
 ) {
+    const float blend = static_cast<float>(
+        1.0 - std::exp(-8.0 * std::max(0.0, deltaTime))
+    );
+    target_ += (desiredTarget_ - target_) * blend;
+    distance_ += (desiredDistance_ - distance_) * blend;
     rebuildView();
 }
 
@@ -78,18 +89,16 @@ void Camera::processScroll(
     double offset
 ) {
 
-    distance_ -=
-        static_cast<float>(offset);
+    desiredDistance_ -=
+        static_cast<float>(offset) * zoomSpeed_;
 
-    if (distance_ < 1.0f) {
-        distance_ = 1.0f;
+    if (desiredDistance_ < 0.02f) {
+        desiredDistance_ = 0.02f;
     }
 
-    if (distance_ > 100.0f) {
-        distance_ = 100.0f;
+    if (desiredDistance_ > 250.0f) {
+        desiredDistance_ = 250.0f;
     }
-
-    rebuildView();
 }
 
 void Camera::processMovement(
@@ -109,22 +118,65 @@ void Camera::processMovement(
         std::cos(yaw)
     };
 
-    target_ += forwardVector * forward;
-    target_ += rightVector * right;
-    target_.y += up;
-    rebuildView();
+    desiredTarget_ += forwardVector * forward * movementSpeed_;
+    desiredTarget_ += rightVector * right * movementSpeed_;
+    desiredTarget_.y += up * movementSpeed_;
+}
+
+void Camera::processPan(
+    double horizontal,
+    double vertical
+) {
+    const float yaw = radians(yaw_);
+    const math::Vec3 rightVector{
+        -std::sin(yaw),
+        0.0,
+        std::cos(yaw)
+    };
+    desiredTarget_ += rightVector * horizontal * movementSpeed_;
+    desiredTarget_.y += vertical * movementSpeed_;
+}
+
+void Camera::setMode(CameraMode mode) noexcept {
+    mode_ = mode;
+}
+
+CameraMode Camera::mode() const noexcept {
+    return mode_;
+}
+
+void Camera::setMovementSpeed(float speed) noexcept {
+    movementSpeed_ = std::max(0.001f, speed);
+}
+
+void Camera::setZoomSpeed(float speed) noexcept {
+    zoomSpeed_ = std::max(0.01f, speed);
+}
+
+float Camera::movementSpeed() const noexcept {
+    return movementSpeed_;
+}
+
+float Camera::zoomSpeed() const noexcept {
+    return zoomSpeed_;
 }
 
 void Camera::focus(const math::Vec3& target) noexcept {
-    target_ = target;
-    rebuildView();
+    desiredTarget_ = target;
+}
+
+void Camera::setFollowTarget(const math::Vec3& target) noexcept {
+    desiredTarget_ = target;
 }
 
 void Camera::reset() noexcept {
     yaw_ = 45.0f;
     pitch_ = 20.0f;
     distance_ = 5.0f;
+    desiredDistance_ = 5.0f;
+    mode_ = CameraMode::Orbit;
     target_ = {};
+    desiredTarget_ = {};
     rebuildView();
 }
 

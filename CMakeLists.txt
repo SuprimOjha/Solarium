@@ -120,6 +120,7 @@ add_library(solarium_rendering
     src/rendering/orbit_renderer.cpp
     src/rendering/star_field_renderer.cpp
     src/rendering/ring_renderer.cpp
+    src/rendering/body_picker.cpp
 )
 
 target_include_directories(
@@ -372,4 +373,36 @@ target_link_libraries(
 add_test(
     NAME StateTransformTests
     COMMAND state_transform_tests
+)
+
+add_executable(
+    camera_tests
+    tests/rendering/camera_tests.cpp
+)
+
+target_link_libraries(
+    camera_tests
+    PRIVATE
+        solarium_rendering
+)
+
+add_test(
+    NAME CameraTests
+    COMMAND camera_tests
+)
+
+add_executable(
+    body_picker_tests
+    tests/rendering/body_picker_tests.cpp
+)
+
+target_link_libraries(
+    body_picker_tests
+    PRIVATE
+        solarium_rendering
+)
+
+add_test(
+    NAME BodyPickerTests
+    COMMAND body_picker_tests
 )

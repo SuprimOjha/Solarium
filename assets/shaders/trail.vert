@@ -7,8 +7,9 @@ uniform mat4 uProjection;
 
 void main()
 {
+    vec3 scaledPosition = aPosition / 149597870700.0;
     gl_Position =
         uProjection *
         uView *
-        vec4(aPosition, 1.0);
+        vec4(scaledPosition, 1.0);
 }

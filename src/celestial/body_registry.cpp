@@ -358,6 +358,7 @@ void BodyRegistry::initializeSolarSystem() {
             argumentOfPeriapsis,
             0.0,
             0.0,
+            0.0,
             period
         };
         body->setMetadata(
@@ -437,6 +438,8 @@ void BodyRegistry::initializeSolarSystem() {
             parentName,
             OrbitalParameters{
                 orbitalRadius,
+                0.0,
+                0.0,
                 0.0,
                 0.0,
                 0.0,

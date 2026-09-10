@@ -8,7 +8,7 @@
 namespace solarium::rendering {
 
 class OrbitTrail {
-public:
+public:...
     explicit OrbitTrail(
         std::size_t maxPoints = 2'000
     );

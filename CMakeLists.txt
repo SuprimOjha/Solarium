@@ -7,6 +7,8 @@ project(
     LANGUAGES C CXX
 )
 
+option(SOLARIUM_ENABLE_LIVE_EPHEMERIS_TESTS "Enable tests that contact JPL Horizons" OFF)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -22,6 +24,11 @@ find_package(OpenGL REQUIRED)
 # ----------------------------------------
 
 find_package(glfw3 3.5 REQUIRED)
+
+find_package(CURL QUIET)
+
+# Optional production HTTP transport for the JPL Horizons provider.
+find_package(CURL QUIET)
 
 # ----------------------------------------
 # GLAD
@@ -53,6 +60,9 @@ add_library(solarium_core
     # Ephemeris data foundation
     src/ephemeris/body_id.cpp
     src/ephemeris/canonical_state.cpp
+    src/ephemeris/curl_http_client.cpp
+    src/ephemeris/jpl_horizons_provider.cpp
+    src/ephemeris/state_cache.cpp
     
     # Physics
     src/physics/gravity.cpp
@@ -438,7 +448,62 @@ target_link_libraries(
         solarium_core
 )
 
+target_compile_definitions(
+    ephemeris_tests
+    PRIVATE
+        SOLARIUM_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures"
+)
+
 add_test(
     NAME EphemerisTests
     COMMAND ephemeris_tests
 )
+
+add_executable(
+    jpl_horizons_provider_tests
+    tests/ephemeris/jpl_horizons_provider_tests.cpp
+)
+
+target_link_libraries(
+    jpl_horizons_provider_tests
+    PRIVATE
+        solarium_core
+)
+
+target_compile_definitions(
+    jpl_horizons_provider_tests
+    PRIVATE
+        SOLARIUM_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures"
+)
+
+add_test(
+    NAME JplHorizonsProviderTests
+    COMMAND jpl_horizons_provider_tests
+)
+
+if(SOLARIUM_ENABLE_LIVE_EPHEMERIS_TESTS)
+    if(NOT CURL_FOUND)
+        message(FATAL_ERROR "SOLARIUM_ENABLE_LIVE_EPHEMERIS_TESTS requires libcurl")
+    endif()
+
+    add_executable(
+        jpl_horizons_live_tests
+        tests/ephemeris/jpl_horizons_live_tests.cpp
+    )
+
+    target_link_libraries(
+        jpl_horizons_live_tests
+        PRIVATE
+            solarium_core
+    )
+
+    add_test(
+        NAME JplHorizonsLiveTests
+        COMMAND jpl_horizons_live_tests
+    )
+endif()
+
+if(CURL_FOUND)
+    target_link_libraries(solarium_core PRIVATE CURL::libcurl)
+    target_compile_definitions(solarium_core PRIVATE SOLARIUM_HAS_CURL=1)
+endif()

@@ -2,13 +2,28 @@
 
 #include "solarium/ephemeris/canonical_state.hpp"
 
+#include <optional>
 #include <string_view>
 
 namespace solarium::ephemeris {
 
+struct EphemerisRequest {
+    BodyId body;
+    time::JulianDate epoch;
+    std::optional<BodyId> center;
+    reference::ReferenceFrame frame;
+    TimeScale timeScale;
+};
+
 class EphemerisProvider {
 public:
     virtual ~EphemerisProvider() = default;
+
+    [[nodiscard]] virtual CanonicalState getState(
+        const EphemerisRequest& request
+    ) const {
+        return getState(request.body, request.epoch, request.frame);
+    }
 
     [[nodiscard]] virtual CanonicalState getState(
         BodyId body,

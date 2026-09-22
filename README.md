@@ -140,6 +140,26 @@ NASA/JPL data. The registry and simulation state are structured so a future
 requiring changes to the renderers. Possible future providers include analytical,
 file-backed, and JPL-backed implementations.
 
+### JPL Horizons Provider
+
+The V2 provider uses the documented JPL Horizons API endpoint, not website HTML.
+`JplHorizonsConfiguration` controls the API URL, timeout, user-agent, default
+center, default frame, time scale, and requested output units. A request supplies
+the `BodyId`, Julian Date, center, reference frame, and time scale. Horizons
+state-vector output is requested as `KM-S` and converted to Solarium's canonical
+meters and meters-per-second state.
+
+The provider validates the HTTP status, `$$SOE`/`$$EOE` block, epoch, numeric
+fields, output units, ICRF frame, and returned center before constructing a
+canonical state. Source metadata identifies `JPL Horizons` and the API response;
+the result should not be interpreted as a blanket claim of NASA accuracy.
+
+Networking is isolated behind `HttpClient`; the default implementation uses
+libcurl when available. A bounded in-memory cache is enabled by default and is
+explicitly replaceable by a future disk or offline cache. Normal CTest runs use
+recorded fixtures and do not require internet access. Live tests are disabled by
+default and can be enabled with `-DSOLARIUM_ENABLE_LIVE_EPHEMERIS_TESTS=ON`.
+
 ## Quality And Performance
 
 The current default targets modest integrated or entry-level GPUs: static meshes

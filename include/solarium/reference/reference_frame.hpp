@@ -48,6 +48,12 @@ struct FrameDescriptor {
         std::string orientation = "J2000"
     );
 
+    [[nodiscard]] static FrameDescriptor bodyFixed(
+        ephemeris::BodyId body,
+        ReferenceFrame centeredFrame,
+        std::string orientation
+    );
+
     [[nodiscard]] bool isRotating() const noexcept {
         return kind == FrameKind::BodyFixed;
     }

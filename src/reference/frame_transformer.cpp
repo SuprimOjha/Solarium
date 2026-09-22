@@ -19,15 +19,15 @@ CoordinateState FrameTransformer::transform(
             "target frame has no orientation"
         );
     }
+    if (state.frame == target.frame && state.descriptor.origin == target.origin &&
+        state.descriptor.orientation == target.orientation) {
+        return state;
+    }
     if (state.descriptor.isRotating() || target.isRotating()) {
         throw FrameTransformError(
             FrameTransformErrorCode::MissingOrientationModel,
             "body-fixed transformations require an orientation model"
         );
-    }
-    if (state.frame == target.frame && state.descriptor.origin == target.origin &&
-        state.descriptor.orientation == target.orientation) {
-        return state;
     }
 
     const bool sourceIsBarycentric = state.frame == ReferenceFrame::Barycentric;
@@ -49,11 +49,16 @@ CoordinateState FrameTransformer::transform(
     const ReferenceFrame requiredOriginFrame =
         sourceIsBarycentric ? state.frame : target.frame;
     if (origin.frame != requiredOriginFrame ||
-        origin.epoch.value() != state.epoch.value() ||
-        origin.timeScale != state.timeScale) {
+        origin.epoch.value() != state.epoch.value()) {
         throw FrameTransformError(
             FrameTransformErrorCode::EpochMismatch,
             "origin state does not match required frame, epoch, or time scale"
+        );
+    }
+    if (origin.timeScale != state.timeScale) {
+        throw FrameTransformError(
+            FrameTransformErrorCode::TimeScaleMismatch,
+            "origin state does not match source time scale"
         );
     }
 

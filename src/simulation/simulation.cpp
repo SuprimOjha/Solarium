@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <memory>
+#include <string>
+#include <stdexcept>
 
 namespace solarium::simulation {
 
@@ -21,7 +23,10 @@ Simulation::Simulation(
       accumulator_(0.0),
       currentPhysicsStep_(
           config.physicsStep
-      ) {
+      ),
+      ephemerisStates_{},
+      ephemerisProviderId_{},
+      ephemerisError_{} {
 
     initialize();
 }
@@ -37,6 +42,17 @@ void Simulation::initialize() {
         config_.physicsStep;
 
     clock_.reset();
+
+    ephemerisStates_.clear();
+    ephemerisProviderId_.clear();
+    ephemerisError_.clear();
+
+    if (config_.mode != SimulationMode::NumericalSimulation &&
+        !applyEphemerisStates()) {
+        registry_.clear();
+        createIntegrator();
+        return;
+    }
 
     solver_.computeAccelerations(
         registry_.bodies()
@@ -106,11 +122,15 @@ void Simulation::update(
         return;
     }
 
-    const double clampedDelta =
-        std::min(
-            realDeltaTime,
-            0.1
-        );
+    const double clampedDelta = std::min(realDeltaTime, 0.1);
+
+    if (config_.mode == SimulationMode::EphemerisPlayback) {
+        if (!applyEphemerisStates()) {
+            return;
+        }
+        clock_.update(clampedDelta);
+        return;
+    }
 
     const double scaledDelta =
         clampedDelta *
@@ -215,6 +235,80 @@ bool Simulation::physicsStep(
     return true;
 }
 
+bool Simulation::applyEphemerisStates() {
+    if (config_.mode == SimulationMode::EphemerisPlayback &&
+        config_.ephemerisDatasets.empty()) {
+        ephemerisError_ = "EPHEMERIS_PLAYBACK requires preloaded ephemeris datasets";
+        clock_.pause();
+        return false;
+    }
+    if (!config_.ephemerisProvider) {
+        if (config_.ephemerisDatasets.empty()) {
+            ephemerisError_ = "Ephemeris mode requires a provider or preloaded datasets";
+            clock_.pause();
+            return false;
+        }
+    }
+
+    try {
+        std::map<ephemeris::BodyId, ephemeris::CanonicalState> states;
+        const auto epoch = clock_.currentEpoch().julianDate();
+        for (int index = 0; index < 29; ++index) {
+            const auto body = static_cast<ephemeris::BodyId>(index);
+            const std::string name(ephemeris::bodyName(body));
+            auto* celestialBody = registry_.find(name);
+            if (celestialBody == nullptr) {
+                throw std::runtime_error("simulation body is missing: " + name);
+            }
+
+            ephemeris::CanonicalState state = [&]() {
+                const auto dataset = config_.ephemerisDatasets.find(body);
+                if (dataset != config_.ephemerisDatasets.end() && dataset->second != nullptr) {
+                    return dataset->second->stateAt(body, epoch);
+                }
+                if (config_.mode == SimulationMode::EphemerisPlayback) {
+                    throw std::runtime_error("preloaded ephemeris dataset is missing: " + name);
+                }
+                if (!config_.ephemerisProvider) {
+                    throw std::runtime_error("no provider for ephemeris body: " + name);
+                }
+                return config_.ephemerisProvider->getState(ephemeris::EphemerisRequest{
+                    body, epoch, config_.ephemerisCenter,
+                    config_.ephemerisFrame, config_.ephemerisTimeScale
+                });
+            }();
+            if (state.frame() != config_.ephemerisFrame ||
+                state.timeScale() != config_.ephemerisTimeScale) {
+                throw std::runtime_error("provider returned state in an unexpected frame or time scale");
+            }
+            states.emplace(body, state);
+        }
+
+        for (const auto& [bodyId, state] : states) {
+            auto* celestialBody = registry_.find(
+                std::string(ephemeris::bodyName(bodyId))
+            );
+            celestialBody->setPosition(state.position().meters);
+            celestialBody->setVelocity(state.velocity().metersPerSecond);
+        }
+        const std::string sourceProvider = states.empty()
+            ? std::string{}
+            : states.begin()->second.source().provider;
+        ephemerisStates_ = std::move(states);
+        ephemerisProviderId_ = sourceProvider;
+        ephemerisError_.clear();
+        return true;
+    } catch (const std::exception& error) {
+        ephemerisStates_.clear();
+        ephemerisProviderId_ = config_.ephemerisProvider
+            ? std::string(config_.ephemerisProvider->providerId())
+            : std::string{};
+        ephemerisError_ = error.what();
+        clock_.pause();
+        return false;
+    }
+}
+
 
 void Simulation::pause() {
     clock_.pause();
@@ -273,6 +367,42 @@ bool
 Simulation::paused() const noexcept {
 
     return clock_.paused();
+}
+
+SimulationMode Simulation::mode() const noexcept {
+    return config_.mode;
+}
+
+std::string_view Simulation::modeName() const noexcept {
+    switch (config_.mode) {
+    case SimulationMode::NumericalSimulation: return "NUMERICAL_SIMULATION";
+    case SimulationMode::EphemerisPlayback: return "EPHEMERIS_PLAYBACK";
+    case SimulationMode::Hybrid: return "HYBRID";
+    }
+    return "UNKNOWN";
+}
+
+std::string_view Simulation::ephemerisProviderId() const noexcept {
+    return ephemerisProviderId_;
+}
+
+const std::string& Simulation::ephemerisError() const noexcept {
+    return ephemerisError_;
+}
+
+reference::ReferenceFrame Simulation::ephemerisFrame() const noexcept {
+    return config_.ephemerisFrame;
+}
+
+ephemeris::TimeScale Simulation::ephemerisTimeScale() const noexcept {
+    return config_.ephemerisTimeScale;
+}
+
+const ephemeris::CanonicalState* Simulation::ephemerisState(
+    ephemeris::BodyId body
+) const noexcept {
+    const auto iterator = ephemerisStates_.find(body);
+    return iterator == ephemerisStates_.end() ? nullptr : &iterator->second;
 }
 
 const time::AstronomicalTime&

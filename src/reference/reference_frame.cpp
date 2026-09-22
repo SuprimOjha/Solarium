@@ -1,5 +1,7 @@
 #include "solarium/reference/reference_frame.hpp"
 
+#include <utility>
+
 namespace solarium::reference {
 
 FrameDescriptor FrameDescriptor::barycentric(std::string orientation) {
@@ -26,6 +28,14 @@ FrameDescriptor FrameDescriptor::moonCentered(
     std::string orientation
 ) {
     return {ReferenceFrame::MoonCentered, FrameKind::Inertial, body, std::move(orientation)};
+}
+
+FrameDescriptor FrameDescriptor::bodyFixed(
+    ephemeris::BodyId body,
+    ReferenceFrame centeredFrame,
+    std::string orientation
+) {
+    return {centeredFrame, FrameKind::BodyFixed, body, std::move(orientation)};
 }
 
 } // namespace solarium::reference

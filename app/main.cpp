@@ -228,6 +228,17 @@ const char* astronomicalTimeScaleName(solarium::time::TimeScale scale) {
     return "UNKNOWN";
 }
 
+const char* referenceFrameName(solarium::reference::ReferenceFrame frame) {
+    switch (frame) {
+        case solarium::reference::ReferenceFrame::Barycentric: return "BARYCENTRIC";
+        case solarium::reference::ReferenceFrame::Heliocentric: return "HELIOCENTRIC";
+        case solarium::reference::ReferenceFrame::Geocentric: return "GEOCENTRIC";
+        case solarium::reference::ReferenceFrame::PlanetCentered: return "PLANET-CENTERED";
+        case solarium::reference::ReferenceFrame::MoonCentered: return "MOON-CENTERED";
+    }
+    return "UNKNOWN";
+}
+
 const char* bodyTypeName(solarium::celestial::BodyType type) {
     using solarium::celestial::BodyType;
     switch (type) {
@@ -875,6 +886,8 @@ int main() {
             << formatEpoch(simulation.currentEpoch())
             << " | Scale: "
             << astronomicalTimeScaleName(simulation.astronomicalTimeScale())
+            << " | Mode: "
+            << simulation.modeName()
             << " | Speed: "
             << formatTimeScale(
                 simulation.timeScale()
@@ -891,6 +904,16 @@ int main() {
             << (showOrbits ? "ON" : "OFF")
             << " | Trails: "
             << (showTrails ? "ON" : "OFF");
+
+        if (simulation.mode() != simulation::SimulationMode::NumericalSimulation) {
+            title << " | Provider: " << simulation.ephemerisProviderId()
+                  << " | Frame: " << referenceFrameName(simulation.ephemerisFrame())
+                  << " | Ephemeris Scale: "
+                  << astronomicalTimeScaleName(simulation.ephemerisTimeScale());
+            if (!simulation.ephemerisError().empty()) {
+                title << " | Ephemeris Error: " << simulation.ephemerisError();
+            }
+        }
 
         if (selectedBody < bodies.size()) {
             const auto& body = bodies[selectedBody];

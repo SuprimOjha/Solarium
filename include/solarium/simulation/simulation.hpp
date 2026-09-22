@@ -10,6 +10,10 @@
 #include "solarium/simulation/simulation_config.hpp"
 
 #include <memory>
+#include <map>
+#include <optional>
+#include <string>
+#include <string_view>
 #include <vector>
 
 namespace solarium::simulation {
@@ -48,6 +52,17 @@ public:
     [[nodiscard]]
     time::TimeScale astronomicalTimeScale() const noexcept;
 
+    [[nodiscard]] SimulationMode mode() const noexcept;
+    [[nodiscard]] std::string_view modeName() const noexcept;
+    [[nodiscard]] std::string_view ephemerisProviderId() const noexcept;
+    [[nodiscard]] const std::string& ephemerisError() const noexcept;
+    [[nodiscard]] reference::ReferenceFrame ephemerisFrame() const noexcept;
+    [[nodiscard]] ephemeris::TimeScale ephemerisTimeScale() const noexcept;
+
+    [[nodiscard]] const ephemeris::CanonicalState* ephemerisState(
+        ephemeris::BodyId body
+    ) const noexcept;
+
 private:
     SimulationConfig config_;
 
@@ -63,11 +78,16 @@ private:
 
     double currentPhysicsStep_;
 
+    std::map<ephemeris::BodyId, ephemeris::CanonicalState> ephemerisStates_;
+    std::string ephemerisProviderId_;
+    std::string ephemerisError_;
+
     void initialize();
 
     void createIntegrator();
 
     bool physicsStep(double deltaTime);
+    bool applyEphemerisStates();
 };
 
 }

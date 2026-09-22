@@ -63,6 +63,9 @@ public:
             fractionalDay_ - other.fractionalDay_;
     }
 
+    [[nodiscard]]
+    constexpr bool operator==(const JulianDate& other) const noexcept = default;
+
 private:
     std::int64_t wholeDay_;
     double fractionalDay_;

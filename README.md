@@ -209,6 +209,30 @@ its existing elapsed-seconds speed, pause, resume, and step behavior while also
 advancing a canonical J2000-based astronomical epoch. The HUD labels both the
 formatted epoch and its time scale.
 
+### Reference Frames And Simulation Modes
+
+Reference states carry position, velocity, epoch, time scale, center, frame
+descriptor, inertial/body-fixed classification, and orientation name. Inertial
+origin changes use explicit origin position and velocity; body-fixed transforms
+are rejected until an orientation model is supplied. Unsupported transforms do
+not return unchanged coordinates.
+
+`SimulationMode::NumericalSimulation` preserves the existing integrators.
+`SimulationMode::Hybrid` applies an authoritative initial state and then
+numerically propagates it; it is not labeled as continuously authoritative.
+`SimulationMode::EphemerisPlayback` consumes preloaded datasets and never calls
+a network provider from the render/update loop. Missing datasets or provider
+states pause the simulation and expose an error instead of falling back to the
+approximate registry.
+
+Ephemeris datasets are keyed by provider, dataset, body, center, frame, time
+scale, time range, and resolution. Samples use cubic Hermite interpolation from
+position and velocity; out-of-range requests fail rather than extrapolate.
+Memory caching is bounded and the cache interface can later be backed by disk.
+All 20 configured moons retain explicit BodyId, parent, Horizons, and NAIF
+mapping checks. Actual availability still depends on provider data and kernel
+coverage, and is never reported as available merely because an ID is mapped.
+
 ## Quality And Performance
 
 The current default targets modest integrated or entry-level GPUs: static meshes

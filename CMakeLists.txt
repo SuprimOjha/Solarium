@@ -67,6 +67,7 @@ add_library(solarium_core
     src/ephemeris/body_id.cpp
     src/ephemeris/canonical_state.cpp
     src/ephemeris/curl_http_client.cpp
+    src/ephemeris/ephemeris_dataset.cpp
     src/ephemeris/jpl_horizons_provider.cpp
     src/ephemeris/spice_backend.cpp
     src/ephemeris/spice_kernel_manager.cpp
@@ -93,7 +94,9 @@ src/time/astronomical_time.cpp
 src/time/leap_second_provider.cpp
 src/time/time_conversion.cpp
 src/time/time_scale_converter.cpp
+src/reference/reference_frame.cpp
 src/reference/frame_transform.cpp
+src/reference/frame_transformer.cpp
 src/reference/state_transform.cpp
 )
 
@@ -265,6 +268,22 @@ add_test(
     COMMAND simulation_tests
 )
 
+add_executable(
+    simulation_ephemeris_tests
+    tests/simulation/simulation_ephemeris_tests.cpp
+)
+
+target_link_libraries(
+    simulation_ephemeris_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME SimulationEphemerisTests
+    COMMAND simulation_ephemeris_tests
+)
+
 # ----------------------------------------
 # Assets
 # ----------------------------------------
@@ -433,6 +452,22 @@ add_test(
 )
 
 add_executable(
+    frame_transformer_tests
+    tests/reference/frame_transformer_tests.cpp
+)
+
+target_link_libraries(
+    frame_transformer_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME FrameTransformerTests
+    COMMAND frame_transformer_tests
+)
+
+add_executable(
     camera_tests
     tests/rendering/camera_tests.cpp
 )
@@ -538,6 +573,38 @@ target_link_libraries(
 add_test(
     NAME SpiceProviderTests
     COMMAND spice_provider_tests
+)
+
+add_executable(
+    ephemeris_dataset_tests
+    tests/ephemeris/ephemeris_dataset_tests.cpp
+)
+
+target_link_libraries(
+    ephemeris_dataset_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME EphemerisDatasetTests
+    COMMAND ephemeris_dataset_tests
+)
+
+add_executable(
+    moon_coverage_tests
+    tests/ephemeris/moon_coverage_tests.cpp
+)
+
+target_link_libraries(
+    moon_coverage_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME MoonCoverageTests
+    COMMAND moon_coverage_tests
 )
 
 if(SOLARIUM_ENABLE_LIVE_EPHEMERIS_TESTS)

@@ -13,7 +13,8 @@ enum class SpiceKernelCategory {
     SPK,
     PCK,
     LSK,
-    FK
+    FK,
+    MetaKernel
 };
 
 struct SpiceKernelSpec {
@@ -41,6 +42,9 @@ class KernelManager {
 public:
     virtual ~KernelManager() = default;
 
+    virtual void loadConfiguredKernels() {}
+    virtual void unloadConfiguredKernels() {}
+
     virtual void load(const SpiceKernelSpec& kernel) = 0;
     virtual void unload(const SpiceKernelSpec& kernel) = 0;
     [[nodiscard]] virtual bool isLoaded(const SpiceKernelSpec& kernel) const = 0;
@@ -61,8 +65,8 @@ public:
     [[nodiscard]] std::optional<SpiceCoverage> coverage(int naifId) const override;
     [[nodiscard]] std::vector<SpiceKernelProvenance> provenance() const override;
 
-    void loadConfiguredKernels();
-    void unloadConfiguredKernels();
+    void loadConfiguredKernels() override;
+    void unloadConfiguredKernels() override;
     [[nodiscard]] const SpiceKernelConfiguration& configuration() const noexcept;
 
 private:

@@ -160,6 +160,32 @@ explicitly replaceable by a future disk or offline cache. Normal CTest runs use
 recorded fixtures and do not require internet access. Live tests are disabled by
 default and can be enabled with `-DSOLARIUM_ENABLE_LIVE_EPHEMERIS_TESTS=ON`.
 
+### NAIF SPICE Provider
+
+`SpiceEphemerisProvider` uses the official NAIF CSPICE toolkit when
+`SOLARIUM_ENABLE_SPICE=ON`; it does not parse SPK binaries itself. SPK files
+provide ephemerides, while PCK, LSK, and FK kernels provide planetary constants,
+leap-second data, and frame definitions as required by the configured kernel
+set. Meta-kernels can be configured with relative paths under the configured
+kernel directory.
+
+`SpiceKernelManager` validates kernel categories and extensions before loading,
+tracks loaded-kernel provenance, and checks SPK coverage before every query.
+States are requested through CSPICE state-query APIs in the configured frame.
+SPICE state vectors are returned in kilometers and kilometers per second and
+are converted to Solarium's canonical meters and meters per second. Julian Dates
+are converted through CSPICE `str2et_c`: UTC, TT, and TDB are passed as explicit
+time scales to obtain ET seconds past J2000; UTC is never treated as TDB.
+
+The default build keeps SPICE disabled and does not require CSPICE. Install the
+official toolkit from [NAIF](https://naif.jpl.nasa.gov/naif/toolkit.html), then
+configure with `-DSOLARIUM_ENABLE_SPICE=ON` and provide the toolkit include and
+library paths through CMake discovery. Kernel files remain external configuration
+and are not downloaded or bundled by Solarium. See the official
+[SPICE documentation](https://naif.jpl.nasa.gov/naif/documentation.html) and
+[SPK documentation](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/spk.html)
+for kernel formats and provenance details.
+
 ## Quality And Performance
 
 The current default targets modest integrated or entry-level GPUs: static meshes

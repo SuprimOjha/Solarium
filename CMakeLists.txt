@@ -8,6 +8,15 @@ project(
 )
 
 option(SOLARIUM_ENABLE_LIVE_EPHEMERIS_TESTS "Enable tests that contact JPL Horizons" OFF)
+option(SOLARIUM_ENABLE_SPICE "Enable the NAIF CSPICE ephemeris provider" OFF)
+
+if(SOLARIUM_ENABLE_SPICE)
+    find_path(SOLARIUM_SPICE_INCLUDE_DIR SpiceUsr.h)
+    find_library(SOLARIUM_SPICE_LIBRARY NAMES cspice)
+    if(NOT SOLARIUM_SPICE_INCLUDE_DIR OR NOT SOLARIUM_SPICE_LIBRARY)
+        message(FATAL_ERROR "SOLARIUM_ENABLE_SPICE requires the NAIF CSPICE toolkit")
+    endif()
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -25,9 +34,6 @@ find_package(OpenGL REQUIRED)
 
 find_package(glfw3 3.5 REQUIRED)
 
-find_package(CURL QUIET)
-
-# Optional production HTTP transport for the JPL Horizons provider.
 find_package(CURL QUIET)
 
 # ----------------------------------------
@@ -62,6 +68,9 @@ add_library(solarium_core
     src/ephemeris/canonical_state.cpp
     src/ephemeris/curl_http_client.cpp
     src/ephemeris/jpl_horizons_provider.cpp
+    src/ephemeris/spice_backend.cpp
+    src/ephemeris/spice_kernel_manager.cpp
+    src/ephemeris/spice_provider.cpp
     src/ephemeris/state_cache.cpp
     
     # Physics
@@ -481,6 +490,22 @@ add_test(
     COMMAND jpl_horizons_provider_tests
 )
 
+add_executable(
+    spice_provider_tests
+    tests/ephemeris/spice_provider_tests.cpp
+)
+
+target_link_libraries(
+    spice_provider_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME SpiceProviderTests
+    COMMAND spice_provider_tests
+)
+
 if(SOLARIUM_ENABLE_LIVE_EPHEMERIS_TESTS)
     if(NOT CURL_FOUND)
         message(FATAL_ERROR "SOLARIUM_ENABLE_LIVE_EPHEMERIS_TESTS requires libcurl")
@@ -506,4 +531,10 @@ endif()
 if(CURL_FOUND)
     target_link_libraries(solarium_core PRIVATE CURL::libcurl)
     target_compile_definitions(solarium_core PRIVATE SOLARIUM_HAS_CURL=1)
+endif()
+
+if(SOLARIUM_ENABLE_SPICE)
+    target_include_directories(solarium_core PRIVATE ${SOLARIUM_SPICE_INCLUDE_DIR})
+    target_link_libraries(solarium_core PRIVATE ${SOLARIUM_SPICE_LIBRARY})
+    target_compile_definitions(solarium_core PRIVATE SOLARIUM_HAS_SPICE=1)
 endif()

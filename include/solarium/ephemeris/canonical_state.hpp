@@ -27,6 +27,7 @@ struct SourceMetadata {
     std::string provider;
     std::string dataset;
     std::string kernelVersion;
+    std::string frameName;
     reference::ReferenceFrame frame = reference::ReferenceFrame::Barycentric;
     std::optional<BodyId> center;
     time::JulianDate epoch{};

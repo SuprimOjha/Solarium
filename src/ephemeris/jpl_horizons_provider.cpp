@@ -214,6 +214,7 @@ constexpr HorizonsBodyMapping bodyMappings[] = {
     SourceMetadata source;
     source.provider = "JPL Horizons";
     source.dataset = "Horizons API state-vector response";
+    source.frameName = "ICRF";
     source.frame = request.frame;
     source.center = request.center;
     source.epoch = request.epoch;

@@ -3,7 +3,7 @@
 namespace solarium::time {
 
 AstronomicalTime::AstronomicalTime() noexcept
-    : julianDate_(JulianDate(0.0)),
+    : julianDate_(JulianDate(2'451'545.0)),
       scale_(TimeScale::TDB) {}
 
 AstronomicalTime::AstronomicalTime(
@@ -27,6 +27,14 @@ double AstronomicalTime::julianDay() const noexcept {
 
 void AstronomicalTime::advanceDays(double days) noexcept {
     julianDate_ += days;
+}
+
+void AstronomicalTime::advanceSeconds(double seconds) noexcept {
+    julianDate_ += seconds / 86'400.0;
+}
+
+void AstronomicalTime::setScale(TimeScale scale) noexcept {
+    scale_ = scale;
 }
 
 }

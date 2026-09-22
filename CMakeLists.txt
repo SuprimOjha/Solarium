@@ -90,7 +90,9 @@ add_library(solarium_core
 src/orbital/kepler_solver.cpp
 # reference
 src/time/astronomical_time.cpp
+src/time/leap_second_provider.cpp
 src/time/time_conversion.cpp
+src/time/time_scale_converter.cpp
 src/reference/frame_transform.cpp
 src/reference/state_transform.cpp
 )
@@ -381,6 +383,38 @@ target_link_libraries(
 add_test(
     NAME TimeConversionTests
     COMMAND time_conversion_tests
+)
+
+add_executable(
+    astronomical_time_tests
+    tests/time/astronomical_time_tests.cpp
+)
+
+target_link_libraries(
+    astronomical_time_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME AstronomicalTimeTests
+    COMMAND astronomical_time_tests
+)
+
+add_executable(
+    time_scale_converter_tests
+    tests/time/time_scale_converter_tests.cpp
+)
+
+target_link_libraries(
+    time_scale_converter_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME TimeScaleConverterTests
+    COMMAND time_scale_converter_tests
 )
 
 

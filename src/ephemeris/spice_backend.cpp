@@ -4,7 +4,9 @@
 
 #include <cmath>
 #include <iomanip>
+#include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 #if defined(SOLARIUM_HAS_SPICE)
@@ -17,6 +19,8 @@ namespace {
 [[nodiscard]] const char* timeScaleName(TimeScale timeScale) {
     switch (timeScale) {
     case TimeScale::UTC: return "UTC";
+    case TimeScale::TAI:
+        throw EphemerisError(EphemerisErrorCode::UnsupportedTimeScale, "SPICE ET input requires UTC, TT, or TDB");
     case TimeScale::TT: return "TT";
     case TimeScale::TDB: return "TDB";
     }
@@ -33,6 +37,10 @@ void throwSpiceFailure(const char* operation) {
 #endif
 
 } // namespace
+
+std::int32_t SpiceStateBackend::taiMinusUtcFromLsk(time::JulianDate) const {
+    throw EphemerisError(EphemerisErrorCode::ProviderFailure, "SPICE backend has no LSK conversion");
+}
 
 double CspiceStateBackend::toEphemerisTime(
     time::JulianDate epoch,
@@ -94,6 +102,54 @@ SpiceState CspiceStateBackend::queryState(
         "SPICE support is disabled; configure with SOLARIUM_ENABLE_SPICE=ON"
     );
 #endif
+}
+
+std::int32_t CspiceStateBackend::taiMinusUtcFromLsk(time::JulianDate utc) const {
+#if defined(SOLARIUM_HAS_SPICE)
+    const double ephemerisTime = toEphemerisTime(utc, TimeScale::UTC);
+    SpiceDouble deltaEtUtc = 0.0;
+    deltet_c(ephemerisTime, "UTC", &deltaEtUtc);
+    if (failed_c()) {
+        throwSpiceFailure("LSK leap-second conversion");
+    }
+    return static_cast<std::int32_t>(std::llround(deltaEtUtc - 32.184));
+#else
+    (void)utc;
+    throw EphemerisError(
+        EphemerisErrorCode::MissingKernel,
+        "SPICE support is disabled; configure with SOLARIUM_ENABLE_SPICE=ON"
+    );
+#endif
+}
+
+SpiceLeapSecondProvider::SpiceLeapSecondProvider(
+    std::shared_ptr<const SpiceStateBackend> backend,
+    time::JulianDate coverageStart,
+    time::JulianDate coverageEnd
+)
+    : backend_(std::move(backend)), coverageStart_(coverageStart), coverageEnd_(coverageEnd) {
+    if (!backend_ || coverageStart_.value() > coverageEnd_.value()) {
+        throw std::invalid_argument("invalid SPICE leap-second provider configuration");
+    }
+}
+
+std::int32_t SpiceLeapSecondProvider::taiMinusUtc(time::JulianDate utc) const {
+    if (utc.value() < coverageStart_.value() || utc.value() > coverageEnd_.value()) {
+        throw std::out_of_range("UTC epoch is outside SPICE LSK coverage");
+    }
+    return backend_->taiMinusUtcFromLsk(utc);
+}
+
+time::JulianDate SpiceLeapSecondProvider::coverageStart() const noexcept {
+    return coverageStart_;
+}
+
+time::JulianDate SpiceLeapSecondProvider::coverageEnd() const noexcept {
+    return coverageEnd_;
+}
+
+std::string_view SpiceLeapSecondProvider::source() const noexcept {
+    return "NAIF SPICE LSK";
 }
 
 } // namespace solarium::ephemeris

@@ -6,6 +6,7 @@
 #include "solarium/rendering/star_field_renderer.hpp"
 #include "solarium/rendering/trail_renderer.hpp"
 #include "solarium/simulation/simulation.hpp"
+#include "solarium/time/time_conversion.hpp"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -197,6 +198,34 @@ std::string formatTimeScale(
         << " days/sec";
 
     return stream.str();
+}
+
+std::string formatEpoch(
+    const solarium::time::AstronomicalTime& epoch
+) {
+    const auto calendar = solarium::time::TimeConversion::julianDateToCalendar(
+        epoch.julianDate()
+    );
+    std::ostringstream stream;
+    stream << std::setfill('0')
+           << std::setw(4) << calendar.year << '-'
+           << std::setw(2) << calendar.month << '-'
+           << std::setw(2) << calendar.day << 'T'
+           << std::setw(2) << calendar.hour << ':'
+           << std::setw(2) << calendar.minute << ':'
+           << std::fixed << std::setprecision(3)
+           << std::setw(6) << calendar.second;
+    return stream.str();
+}
+
+const char* astronomicalTimeScaleName(solarium::time::TimeScale scale) {
+    switch (scale) {
+        case solarium::time::TimeScale::UTC: return "UTC";
+        case solarium::time::TimeScale::TAI: return "TAI";
+        case solarium::time::TimeScale::TT: return "TT";
+        case solarium::time::TimeScale::TDB: return "TDB";
+    }
+    return "UNKNOWN";
 }
 
 const char* bodyTypeName(solarium::celestial::BodyType type) {
@@ -842,6 +871,10 @@ int main() {
             << formatSimulationTime(
                 simulation.simulationTime()
             )
+            << " | Epoch: "
+            << formatEpoch(simulation.currentEpoch())
+            << " | Scale: "
+            << astronomicalTimeScaleName(simulation.astronomicalTimeScale())
             << " | Speed: "
             << formatTimeScale(
                 simulation.timeScale()

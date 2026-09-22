@@ -186,6 +186,29 @@ and are not downloaded or bundled by Solarium. See the official
 [SPK documentation](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/spk.html)
 for kernel formats and provenance details.
 
+### Astronomical Time
+
+The time layer distinguishes UTC, TAI, TT, and TDB. `LeapSecondProvider` is an
+updateable data-source interface; `FileLeapSecondProvider` reads rows of
+`effective_utc_julian_date tai_minus_utc_seconds`, so leap-second data is not
+frozen in the executable. A provider must cover an epoch before UTC conversion
+is attempted. This makes an outdated table fail explicitly instead of silently
+producing a wrong epoch.
+
+TT is defined from TAI using the exact 32.184-second convention. TDB is
+currently computed with an explicitly isolated low-order periodic approximation
+to TDB-TT, based on the IAU/SOFA time-scale conventions; it is not treated as
+equal to TT. The approximation can later be replaced by an ephemeris-backed
+converter. See the [IAU SOFA time-scale documentation](https://www.iausofa.org/)
+for the convention and the [IERS conventions](https://iers-conventions.obspm.fr/)
+for authoritative Earth-orientation and leap-second data sources.
+
+`JulianDate` stores a whole-day and fractional-day pair to avoid discarding
+sub-second precision at modern astronomical epochs. The simulation clock keeps
+its existing elapsed-seconds speed, pause, resume, and step behavior while also
+advancing a canonical J2000-based astronomical epoch. The HUD labels both the
+formatted epoch and its time scale.
+
 ## Quality And Performance
 
 The current default targets modest integrated or entry-level GPUs: static meshes

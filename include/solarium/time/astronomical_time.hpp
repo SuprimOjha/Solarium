@@ -25,6 +25,10 @@ public:
 
     void advanceDays(double days) noexcept;
 
+    void advanceSeconds(double seconds) noexcept;
+
+    void setScale(TimeScale scale) noexcept;
+
 private:
     JulianDate julianDate_;
     TimeScale scale_;

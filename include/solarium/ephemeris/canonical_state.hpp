@@ -5,17 +5,14 @@
 #include "solarium/ephemeris/units.hpp"
 #include "solarium/reference/reference_frame.hpp"
 #include "solarium/time/julian_date.hpp"
+#include "solarium/time/time_scale.hpp"
 
 #include <optional>
 #include <string>
 
 namespace solarium::ephemeris {
 
-enum class TimeScale {
-    TDB,
-    TT,
-    UTC
-};
+using TimeScale = time::TimeScale;
 
 enum class InterpolationStatus {
     Exact,

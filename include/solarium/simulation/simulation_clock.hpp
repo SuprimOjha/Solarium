@@ -1,5 +1,7 @@
 #pragma once
 
+#include "solarium/time/astronomical_time.hpp"
+
 namespace solarium::simulation {
 
 class SimulationClock {
@@ -11,6 +13,8 @@ public:
     void pause();
     void resume();
     void togglePause();
+
+    void step(double simulationSeconds);
 
     void increaseSpeed();
     void decreaseSpeed();
@@ -29,10 +33,18 @@ public:
     [[nodiscard]]
     bool paused() const noexcept;
 
+    [[nodiscard]]
+    const time::AstronomicalTime& currentEpoch() const noexcept;
+
+    [[nodiscard]]
+    time::TimeScale astronomicalTimeScale() const noexcept;
+
 private:
     double simulationTime_;
     double deltaTime_;
-    double timeScale_;
+    double speed_;
+
+    time::AstronomicalTime currentEpoch_;
 
     bool paused_;
 

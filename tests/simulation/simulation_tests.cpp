@@ -1,4 +1,5 @@
 #include "solarium/simulation/simulation.hpp"
+#include "solarium/simulation/simulation_clock.hpp"
 
 #include <cassert>
 #include <iostream>
@@ -68,6 +69,23 @@ int main() {
     assert(
         !simulation.paused()
     );
+
+    assert(simulation.currentEpoch().scale() == time::TimeScale::TDB);
+    const double initialEpoch = simulation.currentEpoch().julianDay();
+    simulation.update(0.001);
+    assert(simulation.currentEpoch().julianDay() > initialEpoch);
+
+    simulation.pause();
+    const double pausedEpoch = simulation.currentEpoch().julianDay();
+    simulation.update(0.1);
+    assert(simulation.currentEpoch().julianDay() == pausedEpoch);
+
+    simulation::SimulationClock clock;
+    clock.pause();
+    const double clockEpoch = clock.currentEpoch().julianDay();
+    clock.step(1.0);
+    assert(clock.currentEpoch().julianDay() > clockEpoch);
+    assert(clock.paused());
 
     std::cout
         << "SimulationTests passed.\n";

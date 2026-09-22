@@ -1,13 +1,15 @@
 #include "solarium/simulation/simulation_clock.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 namespace solarium::simulation {
 
 SimulationClock::SimulationClock()
     : simulationTime_(0.0),
       deltaTime_(0.0),
-      timeScale_(86'400.0),
+            speed_(86'400.0),
+            currentEpoch_(),
       paused_(false) {
 }
 
@@ -19,10 +21,10 @@ void SimulationClock::update(
         return;
     }
 
-    deltaTime_ =
-        realDeltaTime * timeScale_;
+    deltaTime_ = realDeltaTime * speed_;
 
     simulationTime_ += deltaTime_;
+    currentEpoch_.advanceSeconds(deltaTime_);
 }
 
 void SimulationClock::pause() {
@@ -37,24 +39,33 @@ void SimulationClock::togglePause() {
     paused_ = !paused_;
 }
 
+void SimulationClock::step(double simulationSeconds) {
+    if (!std::isfinite(simulationSeconds) || simulationSeconds <= 0.0) {
+        return;
+    }
+    deltaTime_ = simulationSeconds;
+    simulationTime_ += simulationSeconds;
+    currentEpoch_.advanceSeconds(simulationSeconds);
+}
+
 void SimulationClock::increaseSpeed() {
 
-    timeScale_ *= 2.0;
+    speed_ *= 2.0;
 
-    timeScale_ =
+    speed_ =
         std::min(
-            timeScale_,
+            speed_,
             MaximumTimeScale
         );
 }
 
 void SimulationClock::decreaseSpeed() {
 
-    timeScale_ *= 0.5;
+    speed_ *= 0.5;
 
-    timeScale_ =
+    speed_ =
         std::max(
-            timeScale_,
+            speed_,
             MinimumTimeScale
         );
 }
@@ -63,7 +74,8 @@ void SimulationClock::reset() {
 
     simulationTime_ = 0.0;
     deltaTime_ = 0.0;
-    timeScale_ = 86'400.0;
+    speed_ = 86'400.0;
+    currentEpoch_ = time::AstronomicalTime();
     paused_ = false;
 }
 
@@ -82,13 +94,21 @@ double SimulationClock::deltaTime()
 double SimulationClock::timeScale()
     const noexcept {
 
-    return timeScale_;
+    return speed_;
 }
 
 bool SimulationClock::paused()
     const noexcept {
 
     return paused_;
+}
+
+const time::AstronomicalTime& SimulationClock::currentEpoch() const noexcept {
+    return currentEpoch_;
+}
+
+time::TimeScale SimulationClock::astronomicalTimeScale() const noexcept {
+    return currentEpoch_.scale();
 }
 
 }

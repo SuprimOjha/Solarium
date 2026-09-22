@@ -275,4 +275,16 @@ Simulation::paused() const noexcept {
     return clock_.paused();
 }
 
+const time::AstronomicalTime&
+Simulation::currentEpoch() const noexcept {
+
+    return clock_.currentEpoch();
+}
+
+time::TimeScale
+Simulation::astronomicalTimeScale() const noexcept {
+
+    return clock_.astronomicalTimeScale();
+}
+
 } // namespace solarium::simulation

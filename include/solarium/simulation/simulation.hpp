@@ -42,6 +42,12 @@ public:
     [[nodiscard]]
     bool paused() const noexcept;
 
+    [[nodiscard]]
+    const time::AstronomicalTime& currentEpoch() const noexcept;
+
+    [[nodiscard]]
+    time::TimeScale astronomicalTimeScale() const noexcept;
+
 private:
     SimulationConfig config_;
 

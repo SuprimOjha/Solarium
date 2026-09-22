@@ -1,5 +1,6 @@
 #pragma once
 
+#include "solarium/time/calendar_date.hpp"
 #include "solarium/time/julian_date.hpp"
 
 namespace solarium::time {
@@ -15,6 +16,9 @@ public:
         int minute = 0,
         double second = 0.0
     );
+
+    [[nodiscard]]
+    static CalendarDate julianDateToCalendar(JulianDate julianDate);
 
 private:
     TimeConversion() = delete;

@@ -49,6 +49,10 @@ add_library(solarium_core
     # Celestial
     src/celestial/celestial_body.cpp
     src/celestial/body_registry.cpp
+
+    # Ephemeris data foundation
+    src/ephemeris/body_id.cpp
+    src/ephemeris/canonical_state.cpp
     
     # Physics
     src/physics/gravity.cpp
@@ -421,4 +425,20 @@ target_link_libraries(
 add_test(
     NAME OrbitGeometryTests
     COMMAND orbit_geometry_tests
+)
+
+add_executable(
+    ephemeris_tests
+    tests/ephemeris/ephemeris_tests.cpp
+)
+
+target_link_libraries(
+    ephemeris_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME EphemerisTests
+    COMMAND ephemeris_tests
 )

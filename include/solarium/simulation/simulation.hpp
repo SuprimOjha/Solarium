@@ -54,6 +54,8 @@ public:
 
     [[nodiscard]] SimulationMode mode() const noexcept;
     [[nodiscard]] std::string_view modeName() const noexcept;
+    [[nodiscard]] DataMode dataMode() const noexcept;
+    [[nodiscard]] std::string_view dataModeName() const noexcept;
     [[nodiscard]] std::string_view ephemerisProviderId() const noexcept;
     [[nodiscard]] const std::string& ephemerisError() const noexcept;
     [[nodiscard]] reference::ReferenceFrame ephemerisFrame() const noexcept;

@@ -382,6 +382,20 @@ std::string_view Simulation::modeName() const noexcept {
     return "UNKNOWN";
 }
 
+DataMode Simulation::dataMode() const noexcept {
+    return config_.dataMode;
+}
+
+std::string_view Simulation::dataModeName() const noexcept {
+    switch (config_.dataMode) {
+    case DataMode::Online: return "ONLINE";
+    case DataMode::Cached: return "CACHED";
+    case DataMode::Offline: return "OFFLINE";
+    case DataMode::Approximate: return "APPROXIMATE";
+    }
+    return "UNKNOWN";
+}
+
 std::string_view Simulation::ephemerisProviderId() const noexcept {
     return ephemerisProviderId_;
 }

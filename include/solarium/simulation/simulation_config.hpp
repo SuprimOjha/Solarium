@@ -4,6 +4,7 @@
 #include "solarium/ephemeris/ephemeris_dataset.hpp"
 #include "solarium/physics/timestep_controller.hpp"
 #include "solarium/simulation/simulation_mode.hpp"
+#include "solarium/simulation/data_mode.hpp"
 
 #include <memory>
 #include <map>
@@ -27,6 +28,7 @@ struct SimulationConfig {
     physics::TimestepControllerConfig adaptiveConfig{};
 
     SimulationMode mode = SimulationMode::NumericalSimulation;
+    DataMode dataMode = DataMode::Approximate;
     std::shared_ptr<ephemeris::EphemerisProvider> ephemerisProvider;
     std::map<ephemeris::BodyId, std::shared_ptr<const ephemeris::EphemerisDataset>> ephemerisDatasets;
     reference::ReferenceFrame ephemerisFrame = reference::ReferenceFrame::Barycentric;

@@ -233,6 +233,26 @@ All 20 configured moons retain explicit BodyId, parent, Horizons, and NAIF
 mapping checks. Actual availability still depends on provider data and kernel
 coverage, and is never reported as available merely because an ID is mapped.
 
+### Validation And Data Status
+
+`ValidationEngine` compares Solarium and reference states only when body, epoch,
+center, frame, and time scale all match. It reports position and velocity error
+vectors, magnitudes, relative errors, optional radial/along-track/cross-track
+components, and minimum/maximum/mean/RMS statistics over configurable multi-epoch
+studies. It does not produce a score or establish absolute physical truth.
+Reports can be serialized to CSV or JSON; live-provider studies remain separate
+from normal offline tests.
+
+The application exposes explicit `ONLINE`, `CACHED`, `OFFLINE`, and `APPROXIMATE`
+data modes through `SimulationConfig`; failed ephemeris data pauses the simulation
+and does not silently switch to approximate states. The title HUD supports `H`
+to hide/show status and `I` for detailed selected-body fields. In ephemeris and
+hybrid modes analytical Kepler ellipses are suppressed rather than presented as
+authoritative trajectories; trails continue to use rendered state positions.
+The renderer receives the Sun's current render-space position for lighting while
+physical positions, velocities, radii, masses, epochs, and frames remain in core
+state objects.
+
 ## Quality And Performance
 
 The current default targets modest integrated or entry-level GPUs: static meshes

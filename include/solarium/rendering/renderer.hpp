@@ -38,6 +38,8 @@ public:
 
     void setVisualizationMode(VisualizationMode mode) noexcept;
 
+    void setLightPosition(const math::Vec3& position) noexcept;
+
     [[nodiscard]] VisualizationMode visualizationMode() const noexcept;
 
 private:
@@ -47,6 +49,7 @@ private:
 
     unsigned int indexCount_;
     VisualizationMode visualizationMode_;
+    math::Vec3 lightPosition_;
 
     Shader shader_;
 

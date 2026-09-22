@@ -59,6 +59,8 @@ bool pWasPressed = false;
 bool mWasPressed = false;
 bool lWasPressed = false;
 bool vWasPressed = false;
+bool hWasPressed = false;
+bool iWasPressed = false;
 
 // ------------------------------------------------------------
 // GLFW callbacks
@@ -237,6 +239,13 @@ const char* referenceFrameName(solarium::reference::ReferenceFrame frame) {
         case solarium::reference::ReferenceFrame::MoonCentered: return "MOON-CENTERED";
     }
     return "UNKNOWN";
+}
+
+const char* dataStatus(const solarium::simulation::Simulation& simulation) {
+    if (!simulation.ephemerisError().empty()) {
+        return "UNAVAILABLE";
+    }
+    return simulation.dataModeName().data();
 }
 
 const char* bodyTypeName(solarium::celestial::BodyType type) {
@@ -476,6 +485,8 @@ int main() {
     bool oneWasPressed = false;
     bool twoWasPressed = false;
     bool threeWasPressed = false;
+    bool showHud = true;
+    bool detailedHud = false;
 
     // =========================================================
     // MAIN LOOP
@@ -758,6 +769,18 @@ int main() {
         }
         vWasPressed = vPressed;
 
+        const bool hPressed = keyPressed(window, GLFW_KEY_H);
+        if (hPressed && !hWasPressed) {
+            showHud = !showHud;
+        }
+        hWasPressed = hPressed;
+
+        const bool iPressed = keyPressed(window, GLFW_KEY_I);
+        if (iPressed && !iWasPressed) {
+            detailedHud = !detailedHud;
+        }
+        iWasPressed = iPressed;
+
         const bool onePressed = keyPressed(window, GLFW_KEY_1);
         const bool twoPressed = keyPressed(window, GLFW_KEY_2);
         const bool threePressed = keyPressed(window, GLFW_KEY_3);
@@ -815,6 +838,15 @@ int main() {
 
         renderer.beginFrame();
 
+        math::Vec3 sunRenderPosition{};
+        for (const auto& body : bodies) {
+            if (body.name() == "Sun") {
+                sunRenderPosition = renderPosition(body.position());
+                break;
+            }
+        }
+        renderer.setLightPosition(sunRenderPosition);
+
         starFieldRenderer.render(camera);
 
         for (const auto& body : bodies) {
@@ -832,7 +864,8 @@ int main() {
                 body.name() == bodies[selectedBody].name();
             const bool orbitVisible = showOrbits &&
                 (isMoon ? showMoonOrbits : showPlanetOrbits) &&
-                (!selectedOrbitOnly || selected);
+                (!selectedOrbitOnly || selected) &&
+                simulation.mode() == simulation::SimulationMode::NumericalSimulation;
             orbitRenderer.render(body, camera, parentPosition, orbitVisible);
         }
 
@@ -871,6 +904,11 @@ int main() {
 
         std::ostringstream title;
 
+        if (!showHud) {
+            glfwSetWindowTitle(window, "Solarium");
+            continue;
+        }
+
         title
             << "Solarium V1.0 | "
             << (
@@ -888,6 +926,8 @@ int main() {
             << astronomicalTimeScaleName(simulation.astronomicalTimeScale())
             << " | Mode: "
             << simulation.modeName()
+            << " | Data: "
+            << dataStatus(simulation)
             << " | Speed: "
             << formatTimeScale(
                 simulation.timeScale()
@@ -913,6 +953,18 @@ int main() {
             if (!simulation.ephemerisError().empty()) {
                 title << " | Ephemeris Error: " << simulation.ephemerisError();
             }
+        }
+
+        if (detailedHud && selectedBody < bodies.size()) {
+            const auto& body = bodies[selectedBody];
+            const auto bodyId = static_cast<ephemeris::BodyId>(selectedBody);
+            title << " | Body ID: " << ephemeris::bodyName(bodyId)
+                  << " | Radius: " << std::scientific << body.radius() << " m"
+                  << " | Position: (" << body.position().x << ','
+                  << body.position().y << ',' << body.position().z << ") m"
+                  << " | Velocity: (" << body.velocity().x << ','
+                  << body.velocity().y << ',' << body.velocity().z << ") m/s"
+                  << " | Parent: " << (body.parentName().empty() ? "None" : body.parentName());
         }
 
         if (selectedBody < bodies.size()) {

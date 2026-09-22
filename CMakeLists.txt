@@ -98,6 +98,8 @@ src/reference/reference_frame.cpp
 src/reference/frame_transform.cpp
 src/reference/frame_transformer.cpp
 src/reference/state_transform.cpp
+src/validation/validation_engine.cpp
+src/validation/validation_export.cpp
 )
 
 target_include_directories(
@@ -605,6 +607,22 @@ target_link_libraries(
 add_test(
     NAME MoonCoverageTests
     COMMAND moon_coverage_tests
+)
+
+add_executable(
+    validation_engine_tests
+    tests/validation/validation_engine_tests.cpp
+)
+
+target_link_libraries(
+    validation_engine_tests
+    PRIVATE
+        solarium_core
+)
+
+add_test(
+    NAME ValidationEngineTests
+    COMMAND validation_engine_tests
 )
 
 if(SOLARIUM_ENABLE_LIVE_EPHEMERIS_TESTS)

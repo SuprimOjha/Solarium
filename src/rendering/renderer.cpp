@@ -24,8 +24,9 @@ Renderer::Renderer(
     : vao_(0),
       vbo_(0),
       ebo_(0),
-            indexCount_(0),
-            visualizationMode_(VisualizationMode::Presentation),
+    indexCount_(0),
+    visualizationMode_(VisualizationMode::Presentation),
+    lightPosition_{},
       shader_(
           "assets/shaders/planet.vert",
           "assets/shaders/planet.frag"
@@ -237,6 +238,10 @@ void Renderer::setVisualizationMode(VisualizationMode mode) noexcept {
     visualizationMode_ = mode;
 }
 
+void Renderer::setLightPosition(const math::Vec3& position) noexcept {
+    lightPosition_ = position;
+}
+
 VisualizationMode Renderer::visualizationMode() const noexcept {
     return visualizationMode_;
 }
@@ -313,7 +318,12 @@ void Renderer::renderBody(
         static_cast<float>(color.z)
     );
 
-    shader_.setVec3("uLightPosition", 0.0f, 0.0f, 0.0f);
+    shader_.setVec3(
+        "uLightPosition",
+        static_cast<float>(lightPosition_.x),
+        static_cast<float>(lightPosition_.y),
+        static_cast<float>(lightPosition_.z)
+    );
     shader_.setVec3("uWorldPosition", x, y, z);
     shader_.setFloat(
         "uEmissive",

@@ -1,9 +1,13 @@
-# Build
+# ================================
+# Build directories
+# ================================
 build/
 build-*/
 cmake-build-*/
 
-# Compiled binaries
+# ================================
+# Compiled binaries / libraries
+# ================================
 *.exe
 *.dll
 *.so
@@ -13,26 +17,61 @@ cmake-build-*/
 *.obj
 *.o
 
+# ================================
 # Debug symbols
+# ================================
 *.pdb
 *.dSYM/
 
+# ================================
 # IDE
+# ================================
 .vscode/
 .idea/
 .vs/
 
+# ================================
 # CMake
+# ================================
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
 compile_commands.json
 
+# ================================
 # OS
+# ================================
 .DS_Store
 Thumbs.db
 
-# Temporary files
+# ================================
+# Temporary / logs
+# ================================
 *.tmp
 *.log
+
+# ================================
+# Environment / secrets
+# ================================
+.env
+.env.*
+!.env.example
+
+# ================================
+# Local caches
+# ================================
+cache/
+data/cache/
+*.cache
+
+# ================================
+# Generated scientific data
+# ================================
+data/generated/
+data/downloaded/
+
+# ================================
+# Personal/local configuration
+# ================================
+*.local

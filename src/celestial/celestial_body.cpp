@@ -37,6 +37,10 @@ CelestialBody::radius() const noexcept {
     return radius_;
 }
 
+    double CelestialBody::physicalRadius() const noexcept {
+        return radius_;
+    }
+
 const math::Vec3&
 CelestialBody::position() const noexcept {
     return position_;

@@ -62,6 +62,9 @@ public:
 
     [[nodiscard]]
     double radius() const noexcept;
+    
+        [[nodiscard]]
+        double physicalRadius() const noexcept;
 
     [[nodiscard]]
     const math::Vec3& position() const noexcept;

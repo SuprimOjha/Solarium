@@ -99,7 +99,7 @@ int main() {
 
     bool rejected = false;
     try {
-        validation::ValidationEngine::compare(
+        (void)validation::ValidationEngine::compare(
             stateAt(epoch, 0.0, reference::ReferenceFrame::Heliocentric),
             reference
         );

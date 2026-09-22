@@ -63,7 +63,10 @@ int main() {
 
     bool rejected = false;
     try {
-        dataset->stateAt(ephemeris::BodyId::Earth, start - 1.0 / 86'400.0);
+        dataset->stateAt(
+            ephemeris::BodyId::Earth,
+            start + (-1.0 / 86'400.0)
+        );
     } catch (const ephemeris::EphemerisError& error) {
         rejected = error.code() == ephemeris::EphemerisErrorCode::EpochOutsideCoverage;
     }

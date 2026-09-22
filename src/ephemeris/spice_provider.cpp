@@ -42,6 +42,12 @@ constexpr BodyMapping bodyMappings[] = {
     case reference::ReferenceFrame::Barycentric: return 0;
     case reference::ReferenceFrame::Heliocentric: return 10;
     case reference::ReferenceFrame::Geocentric: return 399;
+    case reference::ReferenceFrame::PlanetCentered:
+    case reference::ReferenceFrame::MoonCentered:
+        throw EphemerisError(
+            EphemerisErrorCode::UnsupportedFrame,
+            "centered SPICE frames require an explicit center"
+        );
     }
     throw EphemerisError(EphemerisErrorCode::UnsupportedFrame, "unsupported SPICE reference frame");
 }

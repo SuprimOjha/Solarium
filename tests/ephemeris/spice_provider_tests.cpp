@@ -122,7 +122,7 @@ int main() {
     kernels->coverageEnabled = false;
     bool outsideCoverage = false;
     try {
-        provider.getState(EphemerisRequest{
+        (void)provider.getState(EphemerisRequest{
             BodyId::Earth,
             JulianDate(2'451'546.0),
             BodyId::Sun,
@@ -137,7 +137,7 @@ int main() {
     kernels->loaded = false;
     bool missingKernel = false;
     try {
-        provider.getState(BodyId::Earth, JulianDate(2'451'545.0));
+        (void)provider.getState(BodyId::Earth, JulianDate(2'451'545.0));
     } catch (const EphemerisError& error) {
         missingKernel = error.code() == EphemerisErrorCode::MissingKernel;
     }

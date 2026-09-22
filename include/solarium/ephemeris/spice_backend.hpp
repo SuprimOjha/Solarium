@@ -1,5 +1,6 @@
 #pragma once
 
+#include "solarium/ephemeris/canonical_state.hpp"
 #include "solarium/ephemeris/spice_kernel_manager.hpp"
 #include "solarium/reference/reference_frame.hpp"
 #include "solarium/time/julian_date.hpp"

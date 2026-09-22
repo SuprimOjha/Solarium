@@ -62,7 +62,7 @@ int main() {
 
     bool rejected = false;
     try {
-        FrameTransformer::transform(
+        (void)FrameTransformer::transform(
             object,
             FrameDescriptor::planetCentered(ephemeris::BodyId::Mars),
             FrameTransformContext{}

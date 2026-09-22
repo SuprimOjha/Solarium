@@ -89,7 +89,7 @@ int main() {
     auto malformedClient = std::make_shared<RecordingHttpClient>("$$SOE\nnot,a,state\n$$EOE\n");
     JplHorizonsProvider malformedProvider({}, malformedClient, std::make_shared<ephemeris::InMemoryStateCache>());
     try {
-        malformedProvider.getState(earthRequest());
+        (void)malformedProvider.getState(earthRequest());
     } catch (const EphemerisError& error) {
         malformed = error.code() == EphemerisErrorCode::MalformedData;
     }
@@ -99,7 +99,7 @@ int main() {
     auto failedClient = std::make_shared<RecordingHttpClient>("service unavailable", 503);
     JplHorizonsProvider failedProvider({}, failedClient, std::make_shared<ephemeris::InMemoryStateCache>());
     try {
-        failedProvider.getState(earthRequest());
+        (void)failedProvider.getState(earthRequest());
     } catch (const EphemerisError& error) {
         httpFailure = error.code() == EphemerisErrorCode::ProviderFailure;
     }

@@ -16,18 +16,24 @@
 namespace solarium::ephemeris {
 namespace {
 
+#if defined(SOLARIUM_HAS_SPICE)
 [[nodiscard]] const char* timeScaleName(TimeScale timeScale) {
     switch (timeScale) {
     case TimeScale::UTC: return "UTC";
     case TimeScale::TAI:
-        throw EphemerisError(EphemerisErrorCode::UnsupportedTimeScale, "SPICE ET input requires UTC, TT, or TDB");
+        throw EphemerisError(
+            EphemerisErrorCode::UnsupportedTimeScale,
+            "SPICE ET input requires UTC, TT, or TDB"
+        );
     case TimeScale::TT: return "TT";
     case TimeScale::TDB: return "TDB";
     }
-    throw EphemerisError(EphemerisErrorCode::UnsupportedTimeScale, "unsupported SPICE time scale");
+    throw EphemerisError(
+        EphemerisErrorCode::UnsupportedTimeScale,
+        "unsupported SPICE time scale"
+    );
 }
 
-#if defined(SOLARIUM_HAS_SPICE)
 void throwSpiceFailure(const char* operation) {
     SpiceChar message[1841]{};
     getmsg_c("LONG", static_cast<SpiceInt>(sizeof(message)), message);

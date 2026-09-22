@@ -73,6 +73,9 @@ constexpr HorizonsBodyMapping bodyMappings[] = {
     }
 
     const std::string epoch = makeEpoch(request.epoch);
+    const char* timeType = request.timeScale == TimeScale::UTC
+        ? "UTC"
+        : request.timeScale == TimeScale::TT ? "TT" : "TDB";
     const std::vector<std::pair<std::string, std::string>> parameters = {
         {"COMMAND", "'" + std::string(horizonsBodyId(request.body)) + "'"},
         {"EPHEM_TYPE", "VECTORS"},
@@ -86,8 +89,7 @@ constexpr HorizonsBodyMapping bodyMappings[] = {
         {"REF_SYSTEM", "'ICRF'"},
         {"REF_PLANE", "'ECLIPTIC'"},
         {"OUT_UNITS", "'KM-S'"},
-        {"TIME_TYPE", "'" + (request.timeScale == TimeScale::UTC ? "UTC" :
-            request.timeScale == TimeScale::TT ? "TT" : "TDB") + "'"}
+        {"TIME_TYPE", std::string("'") + timeType + "'"}
     };
 
     std::ostringstream url;
@@ -160,7 +162,6 @@ constexpr HorizonsBodyMapping bodyMappings[] = {
         throw EphemerisError(EphemerisErrorCode::MalformedData, "Horizons response has no complete $$SOE/$$EOE block");
     }
     const auto start = body.find('\n', startMarker);
-    const auto end = body.find('\n', start == std::string_view::npos ? startMarker : start);
     const auto dataStart = start == std::string_view::npos ? endMarker : start + 1;
     const auto lineEnd = body.find('\n', dataStart);
     const std::string line = trim(std::string(body.substr(dataStart, lineEnd == std::string_view::npos ? endMarker - dataStart : lineEnd - dataStart)));

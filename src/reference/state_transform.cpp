@@ -15,6 +15,11 @@ CoordinateState StateTransform::transform(
     CoordinateState result;
 
     result.frame = targetFrame;
+    result.epoch = state.epoch;
+    result.timeScale = state.timeScale;
+    result.center = origin.center;
+    result.descriptor = state.descriptor;
+    result.descriptor.frame = targetFrame;
 
     result.position =
         FrameTransform::position(

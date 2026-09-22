@@ -1,5 +1,7 @@
 #include "solarium/reference/frame_transform.hpp"
 
+#include <stdexcept>
+
 namespace solarium::reference {
 
 math::Vec3 FrameTransform::position(
@@ -22,7 +24,7 @@ math::Vec3 FrameTransform::position(
         return position + originPosition;
     }
 
-    return position;
+    throw std::invalid_argument("unsupported reference-frame position transformation");
 }
 
 math::Vec3 FrameTransform::velocity(
@@ -45,7 +47,7 @@ math::Vec3 FrameTransform::velocity(
         return velocity + originVelocity;
     }
 
-    return velocity;
+    throw std::invalid_argument("unsupported reference-frame velocity transformation");
 }
 
 }

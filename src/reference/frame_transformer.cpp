@@ -46,11 +46,14 @@ CoordinateState FrameTransformer::transform(
     }
 
     const CoordinateState& origin = *context.originState;
-    if (origin.frame != state.frame || origin.epoch.value() != state.epoch.value() ||
+    const ReferenceFrame requiredOriginFrame =
+        sourceIsBarycentric ? state.frame : target.frame;
+    if (origin.frame != requiredOriginFrame ||
+        origin.epoch.value() != state.epoch.value() ||
         origin.timeScale != state.timeScale) {
         throw FrameTransformError(
             FrameTransformErrorCode::EpochMismatch,
-            "origin state does not match source epoch or time scale"
+            "origin state does not match required frame, epoch, or time scale"
         );
     }
 
